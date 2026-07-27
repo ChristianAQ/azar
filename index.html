@@ -350,14 +350,19 @@
 
   .dice{
     position:relative;
-    width:118px; height:118px;
+    width:118px;
+    height:118px;
+
     transform-style:preserve-3d;
+    -webkit-transform-style:preserve-3d;
+
     transform:rotateX(0deg) rotateY(0deg);
-    filter:drop-shadow(0 20px 30px rgba(0,0,0,0.55));
-  }
+    filter:drop-shadow(0 20px 30px rgba(0,0,0,.55));
+}
 
   .die-face{
-    position:absolute; inset:0;
+    position:absolute;
+    inset:0;
     display:grid;
     grid-template-columns:repeat(3,1fr);
     grid-template-rows:repeat(3,1fr);
@@ -366,6 +371,11 @@
     border:1.5px solid var(--line-strong);
     border-radius:16px;
     box-shadow:inset 0 0 14px rgba(0,0,0,0.4);
+
+    /* <-- Añadir */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d;
   }
   .pip{
     width:100%; aspect-ratio:1/1;
