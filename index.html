@@ -271,12 +271,16 @@
 
   .needle svg{ position:absolute; bottom:0; left:50%; transform:translateX(-50%); overflow:visible; }
 
-  /* ---------- COIN ---------- */
+  /* ---------- COIN & DICE (rendered with three.js) ---------- */
 
-  .coin-wrap{
+  .three-wrap{
     position:absolute; inset:0;
     display:flex; align-items:center; justify-content:center;
-    perspective:900px;
+  }
+  .three-wrap canvas{
+    width:100% !important;
+    height:100% !important;
+    touch-action:none;
   }
 
   .coin-rim{
@@ -286,120 +290,6 @@
     border:3px dashed rgba(227,183,103,0.28);
     pointer-events:none;
   }
-
-  .coin{
-    position:relative;
-    width:56%;
-    aspect-ratio:1/1;
-    transform-style:preserve-3d;
-    transform:rotateY(0deg);
-    filter:drop-shadow(0 18px 32px rgba(0,0,0,0.55));
-  }
-
-  .coin-face{
-    position:absolute; inset:0;
-    border-radius:50%;
-    backface-visibility:hidden;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px;
-    background:radial-gradient(circle at 34% 28%, #f1d698, var(--gold) 55%, #9c7a34 100%);
-    border:3px solid rgba(20,14,6,0.4);
-    box-shadow:inset 0 0 14px rgba(0,0,0,0.35), inset 0 0 0 6px rgba(20,14,6,0.12);
-  }
-  .coin-face svg{ width:44%; height:44%; overflow:visible; }
-  .coin-face .coin-label{
-    font-family:'Unbounded',sans-serif;
-    font-weight:800;
-    font-size:11px;
-    letter-spacing:.14em;
-    color:rgba(20,14,6,0.72);
-  }
-
-  .coin-front{
-    box-shadow:
-      inset 0 0 14px rgba(0,0,0,0.35),
-      inset 0 0 0 6px rgba(20,14,6,0.12),
-      inset 0 0 0 2px rgba(186,255,61,0.4);
-  }
-  .coin-front .coin-glyph path,
-  .coin-front .coin-glyph circle{
-    stroke:var(--neon);
-    filter:drop-shadow(0 0 3px rgba(186,255,61,0.6));
-  }
-
-  .coin-back{
-    transform:rotateY(180deg);
-    box-shadow:
-      inset 0 0 14px rgba(0,0,0,0.35),
-      inset 0 0 0 6px rgba(20,14,6,0.12),
-      inset 0 0 0 2px rgba(141,123,255,0.45);
-  }
-  .coin-back .coin-glyph path,
-  .coin-back .coin-glyph circle{
-    stroke:var(--violet);
-    filter:drop-shadow(0 0 3px rgba(141,123,255,0.65));
-  }
-  .coin-back .coin-glyph .coin-glyph-dot{ fill:var(--violet); }
-
-  /* ---------- DICE ---------- */
-
-  .dice-wrap{
-    position:absolute; inset:0;
-    display:flex; align-items:center; justify-content:center;
-    perspective:700px;
-  }
-
-  .dice{
-    position:relative;
-    width:118px;
-    height:118px;
-
-    transform-style:preserve-3d;
-    -webkit-transform-style:preserve-3d;
-
-    transform:rotateX(0deg) rotateY(0deg);
-    filter:drop-shadow(0 20px 30px rgba(0,0,0,.55));
-}
-
-  .die-face{
-    position:absolute;
-    inset:0;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    grid-template-rows:repeat(3,1fr);
-    padding:16%;
-    background:linear-gradient(150deg, var(--panel-2), var(--panel));
-    border:1.5px solid var(--line-strong);
-    border-radius:16px;
-    box-shadow:inset 0 0 14px rgba(0,0,0,0.4);
-
-    /* <-- Añadir */
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform-style: preserve-3d;
-  }
-  .pip{
-    width:100%; aspect-ratio:1/1;
-    max-width:16px; max-height:16px;
-    border-radius:50%;
-    background:var(--bone);
-    box-shadow:0 0 6px rgba(244,239,227,0.45);
-    align-self:center; justify-self:center;
-  }
-
-  .f1{ transform:translateZ(59px); }
-  .f6{ transform:rotateY(180deg) translateZ(59px); }
-  .f3{ transform:rotateY(90deg) translateZ(59px); }
-  .f4{ transform:rotateY(-90deg) translateZ(59px); }
-  .f2{ transform:rotateX(90deg) translateZ(59px); }
-  .f5{ transform:rotateX(-90deg) translateZ(59px); }
-
-  .p-c1{ grid-column:2; grid-row:2; }
-  .p-tl{ grid-column:1; grid-row:1; }
-  .p-tr{ grid-column:3; grid-row:1; }
-  .p-bl{ grid-column:1; grid-row:3; }
-  .p-br{ grid-column:3; grid-row:3; }
-  .p-ml{ grid-column:1; grid-row:2; }
-  .p-mr{ grid-column:3; grid-row:2; }
 
   /* ---------- CONTROLS ---------- */
 
@@ -604,7 +494,7 @@
 
   <div class="header">
     <p class="eyebrow">Juegos de fiesta 🍻</p>
-    <h1 class="title">Juegos del <span>Azar</span></h1>
+    <h1 class="title">Ruleta de <span>Chupitos</span></h1>
   </div>
 
   <div class="mode-dock" role="tablist" aria-label="Modo de juego" id="modeDock">
@@ -650,38 +540,15 @@
     </div>
 
     <div class="stage-panel" id="stage-moneda" hidden>
-      <div class="coin-wrap">
+      <div class="three-wrap">
         <div class="coin-rim"></div>
-        <div class="coin" id="coin">
-          <div class="coin-face coin-front">
-            <svg class="coin-glyph" viewBox="0 0 100 100" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="50" cy="50" r="38" stroke-width="1.6" stroke-opacity="0.5"/>
-              <path d="M50 16 L58 40 L84 40 L62 55 L70 80 L50 64 L30 80 L38 55 L16 40 L42 40 Z"/>
-            </svg>
-            <span class="coin-label">CARA</span>
-          </div>
-          <div class="coin-face coin-back">
-            <svg class="coin-glyph" viewBox="0 0 100 100" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="50" cy="50" r="38" stroke-width="1.6" stroke-opacity="0.5"/>
-              <path d="M50 12 L60 40 L88 50 L60 60 L50 88 L40 60 L12 50 L40 40 Z"/>
-              <circle class="coin-glyph-dot" cx="50" cy="50" r="6" stroke="none"/>
-            </svg>
-            <span class="coin-label">CRUZ</span>
-          </div>
-        </div>
+        <canvas id="coinCanvas"></canvas>
       </div>
     </div>
 
     <div class="stage-panel" id="stage-dado" hidden>
-      <div class="dice-wrap">
-        <div class="dice" id="dice">
-          <div class="die-face f1"><span class="pip p-c1"></span></div>
-          <div class="die-face f2"><span class="pip p-tl"></span><span class="pip p-br"></span></div>
-          <div class="die-face f3"><span class="pip p-tl"></span><span class="pip p-c1"></span><span class="pip p-br"></span></div>
-          <div class="die-face f4"><span class="pip p-tl"></span><span class="pip p-tr"></span><span class="pip p-bl"></span><span class="pip p-br"></span></div>
-          <div class="die-face f5"><span class="pip p-tl"></span><span class="pip p-tr"></span><span class="pip p-c1"></span><span class="pip p-bl"></span><span class="pip p-br"></span></div>
-          <div class="die-face f6"><span class="pip p-tl"></span><span class="pip p-tr"></span><span class="pip p-ml"></span><span class="pip p-mr"></span><span class="pip p-bl"></span><span class="pip p-br"></span></div>
-        </div>
+      <div class="three-wrap">
+        <canvas id="diceCanvas"></canvas>
       </div>
     </div>
   </div>
@@ -717,6 +584,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
   "use strict";
@@ -730,10 +598,10 @@
 
   var SPIN_DURATION_MS = 3200;
   var EXTRA_SPINS = 5;
-  var COIN_DURATION_MS = 1900;
-  var COIN_EXTRA_SPINS = 6;
-  var DICE_DURATION_MS = 1300;
-  var DICE_EXTRA_TURNS = 3;
+  var COIN_TUMBLE_MS = 1000;
+  var COIN_SETTLE_MS = 700;
+  var DICE_TUMBLE_MS = 750;
+  var DICE_SETTLE_MS = 550;
 
   var CONFETTI_COUNT = 26;
   var CONFETTI_COLORS = ['#baff3d', '#ff5d78', '#e3b767', '#8d7bff'];
@@ -758,18 +626,18 @@
   var HUD_STATUS_IDLE = { ruleta:'Listo', moneda:'Listo', dado:'Listo' };
   var HUD_STATUS_BUSY = { ruleta:'Girando…', moneda:'En el aire…', dado:'Rodando…' };
 
-  var WINNER_CAPTIONS = [
+var WINNER_CAPTIONS = [
     'RETO: Chupito o dos flexiones 🔥',
     'Bebes tú y la persona que elijas 🍻',
     'A beber! que la noche es joven',
     'Si gotea repites 💦',
-    'Salud!',
+    'Si gotea repites 💦',
     'Nadie te salva de esta, a beber!',
     'RETO: Chupito o baila 15 segundos 🔥',
     'RETO: Chupito o cantar 15 segundos 🔥',
     'Bebes doble si llevas ropa negra ⚫',
     'Todos menos tú beben 😎',
-    'Salud!',
+    'Si gotea repites 💦',
     'Bebe sin usar las manos',
     'RETO: piedra, papel o tijera. El perdedor bebe doble🔥',
     'RETO: Haz un piropo a alguien o bebe 🔥',
@@ -789,25 +657,16 @@
   ];
 
   var COIN_CAPTIONS = [
-    'Cada moneda cuenta'
+    ''
   ];
 
   var DICE_CAPTIONS = {
-    1: 'Bebes tú, sin discusión',
-    2: 'Elige a alguien para beber contigo',
-    3: 'Reparte 3 tragos entre el grupo',
-    4: 'Todos beben menos tú 😏',
-    5: 'El último en gritar "¡salud!" bebe',
-    6: 'Chupito doble para ti 🔥'
-  };
-
-  var DICE_ROTATIONS = {
-    1:{ x:0,  y:0   },
-    2:{ x:-90,y:0   },
-    3:{ x:0,  y:-90 },
-    4:{ x:0,  y:90  },
-    5:{ x:90, y:0   },
-    6:{ x:0,  y:180 }
+    1: 'Uno',
+    2: 'Dos',
+    3: 'Tres',
+    4: 'Cuatro',
+    5: 'Cinco',
+    6: 'Seis'
   };
 
   /* ---------- DOM ---------- */
@@ -828,8 +687,8 @@
   };
   var hudStatus = document.getElementById('hudStatus');
 
-  var coinEl = document.getElementById('coin');
-  var diceEl = document.getElementById('dice');
+  var coinCanvas = document.getElementById('coinCanvas');
+  var diceCanvas = document.getElementById('diceCanvas');
 
   var actionBtn = document.getElementById('actionBtn');
   var actionIcon = document.getElementById('actionIcon');
@@ -859,10 +718,7 @@
   var wheelRotation = 0;
   var lastWinner = -1;
 
-  var coinRotation = 0;
   var lastCoin = '';
-
-  var diceRotX = 0, diceRotY = 0;
   var lastDice = -1;
 
   /* ---------- STORAGE ---------- */
@@ -1012,6 +868,12 @@
       else stagePanels[key].setAttribute('hidden', '');
     });
 
+    if(mode === 'moneda'){
+      requestAnimationFrame(function(){ CoinGame.init(); CoinGame.resize(); });
+    } else if(mode === 'dado'){
+      requestAnimationFrame(function(){ DiceGame.init(); DiceGame.resize(); });
+    }
+
     actionLabel.textContent = ACTION_LABEL[mode];
     actionIcon.innerHTML = ACTION_ICON[mode];
     hudStatus.textContent = HUD_STATUS_IDLE[mode];
@@ -1026,7 +888,11 @@
   modeTabs.forEach(function(tab){
     tab.addEventListener('click', function(){ switchMode(tab.dataset.mode); });
   });
-  window.addEventListener('resize', moveIndicator);
+  window.addEventListener('resize', function(){
+    moveIndicator();
+    CoinGame.resize();
+    DiceGame.resize();
+  });
 
   /* ---------- RESULT TEXT ---------- */
 
@@ -1137,6 +1003,390 @@
     setTimeout(finish, reduceMotion ? 100 : SPIN_DURATION_MS + 400);
   }
 
+  /* ---------- THREE.JS: MONEDA ---------- */
+
+  var CoinGame = (function(){
+    var scene, camera, renderer, coin, group, shadow, ready = false;
+    var SHADOW_OPACITY = 0.38;
+
+    function makeFaceTexture(kind){
+      var size = 512;
+      var c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      var ctx = c.getContext('2d');
+
+      // dark panel disc, same family as the dice faces
+      var grad = ctx.createRadialGradient(size*0.36, size*0.3, size*0.05, size*0.5, size*0.5, size*0.55);
+      grad.addColorStop(0, '#2c2249');
+      grad.addColorStop(1, '#1b1430');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, size/2 - 6, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(244,239,227,0.18)';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, size/2 - 10, 0, Math.PI*2);
+      ctx.stroke();
+
+      var accent = kind === 'cara' ? '#baff3d' : '#8d7bff';
+
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, size*0.36, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 13;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 26;
+
+      var pts = kind === 'cara'
+        ? [[50,16],[58,40],[84,40],[62,55],[70,80],[50,64],[30,80],[38,55],[16,40],[42,40]]
+        : [[50,12],[60,40],[88,50],[60,60],[50,88],[40,60],[12,50],[40,40]];
+
+      ctx.beginPath();
+      pts.forEach(function(p, i){
+        var x = p[0]/100*size, y = p[1]/100*size;
+        if(i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.closePath();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      if(kind === 'cruz'){
+        ctx.fillStyle = accent;
+        ctx.beginPath();
+        ctx.arc(size/2, size/2, size*0.045, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = 'rgba(244,239,227,0.85)';
+      ctx.font = '700 ' + Math.round(size*0.085) + 'px Unbounded, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(kind === 'cara' ? 'CARA' : 'CRUZ', size/2, size*0.79);
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    function makeEdgeTexture(){
+      var w = 128, h = 32;
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var ctx = c.getContext('2d');
+      var grad = ctx.createLinearGradient(0,0,0,h);
+      grad.addColorStop(0, '#251c3d');
+      grad.addColorStop(0.5, '#2c2249');
+      grad.addColorStop(1, '#1b1430');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = 'rgba(244,239,227,0.10)';
+      for(var x = 0; x < w; x += 4) ctx.fillRect(x,0,2,h);
+      var tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.repeat.set(10,1);
+      return tex;
+    }
+
+    function init(){
+      if(ready) return;
+      ready = true;
+
+      var w = coinCanvas.clientWidth || 300, h = coinCanvas.clientHeight || 300;
+      renderer = new THREE.WebGLRenderer({ canvas:coinCanvas, antialias:true, alpha:true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h, false);
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(32, w/h, 0.1, 100);
+      camera.position.set(0, 0, 6.4);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      var key = new THREE.DirectionalLight(0xfff2d0, 0.85);
+      key.position.set(2, 3, 4);
+      scene.add(key);
+      var rimLight = new THREE.DirectionalLight(0xbaff3d, 0.35);
+      rimLight.position.set(-3, -2, -2);
+      scene.add(rimLight);
+
+      var geo = new THREE.CylinderGeometry(1.55, 1.55, 0.34, 72);
+      var matEdge = new THREE.MeshStandardMaterial({ map:makeEdgeTexture(), metalness:0.15, roughness:0.6 });
+      var matTop = new THREE.MeshStandardMaterial({ map:makeFaceTexture('cara'), metalness:0.15, roughness:0.6 });
+      var matBottom = new THREE.MeshStandardMaterial({ map:makeFaceTexture('cruz'), metalness:0.15, roughness:0.6 });
+
+      // CylinderGeometry material groups are [side, top(+Y), bottom(-Y)]
+      coin = new THREE.Mesh(geo, [matEdge, matTop, matBottom]);
+      coin.rotation.x = Math.PI/2; // tilt so the caps face the camera by default
+
+      group = new THREE.Group();
+      group.add(coin);
+      scene.add(group);
+
+      var shadowGeo = new THREE.CircleGeometry(1.35, 48);
+      var shadowMat = new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:SHADOW_OPACITY });
+      shadow = new THREE.Mesh(shadowGeo, shadowMat);
+      shadow.rotation.x = -Math.PI/2;
+      shadow.position.y = -1.7;
+      scene.add(shadow);
+
+      render();
+    }
+
+    function render(){ renderer.render(scene, camera); }
+
+    function resize(){
+      if(!ready) return;
+      var w = coinCanvas.clientWidth, h = coinCanvas.clientHeight;
+      if(!w || !h) return;
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+      render();
+    }
+
+    // local cap normal (+Y = cara, -Y = cruz) expressed in the mesh's own
+    // fixed local rotation, so the target quaternion is computed against
+    // the real geometry rather than an assumed/guessed angle.
+    function faceNormal(kind){
+      var n = new THREE.Vector3(0, kind === 'cara' ? 1 : -1, 0);
+      n.applyEuler(coin.rotation);
+      return n;
+    }
+
+    function spin(target, tumbleMs, settleMs, reduceMotion, onDone){
+      init();
+      var targetQuat = new THREE.Quaternion().setFromUnitVectors(faceNormal(target), new THREE.Vector3(0,0,1));
+      var startQuat = group.quaternion.clone();
+
+      function settle(){
+        group.quaternion.copy(targetQuat);
+        group.position.y = 0;
+        shadow.scale.set(1,1,1);
+        shadow.material.opacity = SHADOW_OPACITY;
+        render();
+        onDone();
+      }
+
+      if(reduceMotion){
+        settle();
+        return;
+      }
+
+      // find the single shortest rotation axis that carries the coin from
+      // its current orientation to the exact target orientation, then spin
+      // around THAT one axis (like a real flicked coin), adding a handful
+      // of extra full turns purely for visual length — a rotation of
+      // angle + 360*k around a fixed axis lands on the exact same final
+      // orientation as "angle" alone, so the landing is always correct.
+      var deltaQuat = targetQuat.clone().multiply(startQuat.clone().invert());
+      var w = Math.max(-1, Math.min(1, deltaQuat.w));
+      var angle = 2 * Math.acos(w);
+      var s = Math.sqrt(Math.max(0, 1 - w*w));
+      var axis = s < 1e-4
+        ? new THREE.Vector3(1, 0.15, 0).normalize()
+        : new THREE.Vector3(deltaQuat.x, deltaQuat.y, deltaQuat.z).divideScalar(s).normalize();
+
+      var wobbleAxis = axis.clone().cross(new THREE.Vector3(0,1,0));
+      if(wobbleAxis.lengthSq() < 1e-4) wobbleAxis.set(0,0,1);
+      wobbleAxis.normalize();
+
+      var extraTurns = 4 + Math.floor(Math.random()*3); // 4-6 extra full spins
+      var totalAngle = angle + extraTurns * Math.PI * 2;
+      var duration = tumbleMs + settleMs;
+      var arcHeight = 1.15;
+      var start = performance.now();
+
+      function step(now){
+        var p = Math.min(1, (now - start) / duration);
+        var eased = 1 - Math.pow(1 - p, 3); // decelerate into the landing, like gravity catching it
+
+        var qSpin = new THREE.Quaternion().setFromAxisAngle(axis, totalAngle * eased);
+        var wobbleAmt = 0.16 * (1 - eased) * Math.sin(p * 26);
+        var qWobble = new THREE.Quaternion().setFromAxisAngle(wobbleAxis, wobbleAmt);
+        group.quaternion.copy(qWobble.multiply(qSpin.multiply(startQuat)));
+
+        var arc = Math.sin(Math.PI * p); // up then down, like a real toss
+        group.position.y = arcHeight * arc;
+        var flat = 1 - arc * 0.55;
+        shadow.scale.set(flat, flat, 1);
+        shadow.material.opacity = SHADOW_OPACITY * (1 - arc * 0.7);
+
+        render();
+        if(p < 1) requestAnimationFrame(step);
+        else settle();
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    return { init:init, spin:spin, resize:resize };
+  })();
+
+  /* ---------- THREE.JS: DADO ---------- */
+
+  var DiceGame = (function(){
+    var scene, camera, renderer, dice, group, ready = false;
+
+    var FACE_ORDER = ['right','left','top','bottom','front','back']; // BoxGeometry material index order
+    var FACE_NUMBER = { right:2, left:5, top:3, bottom:4, front:1, back:6 };
+    var FACE_NORMAL = {
+      right:  new THREE.Vector3(1,0,0),
+      left:   new THREE.Vector3(-1,0,0),
+      top:    new THREE.Vector3(0,1,0),
+      bottom: new THREE.Vector3(0,-1,0),
+      front:  new THREE.Vector3(0,0,1),
+      back:   new THREE.Vector3(0,0,-1)
+    };
+
+    function roundRect(ctx,x,y,w,h,r){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);
+      ctx.arcTo(x+w,y,x+w,y+h,r);
+      ctx.arcTo(x+w,y+h,x,y+h,r);
+      ctx.arcTo(x,y+h,x,y,r);
+      ctx.arcTo(x,y,x+w,y,r);
+      ctx.closePath();
+    }
+
+    function makeFaceTexture(n){
+      var size = 512;
+      var c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      var ctx = c.getContext('2d');
+
+      var grad = ctx.createLinearGradient(0,0,size,size);
+      grad.addColorStop(0, '#251c3d');
+      grad.addColorStop(1, '#1b1430');
+      ctx.fillStyle = grad;
+      roundRect(ctx,10,10,size-20,size-20,70);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(244,239,227,0.18)';
+      ctx.lineWidth = 5;
+      roundRect(ctx,10,10,size-20,size-20,70);
+      ctx.stroke();
+
+      var positions = {
+        1: [[0.5,0.5]],
+        2: [[0.27,0.27],[0.73,0.73]],
+        3: [[0.27,0.27],[0.5,0.5],[0.73,0.73]],
+        4: [[0.27,0.27],[0.73,0.27],[0.27,0.73],[0.73,0.73]],
+        5: [[0.27,0.27],[0.73,0.27],[0.5,0.5],[0.27,0.73],[0.73,0.73]],
+        6: [[0.27,0.25],[0.73,0.25],[0.27,0.5],[0.73,0.5],[0.27,0.75],[0.73,0.75]]
+      };
+      ctx.fillStyle = '#f4efe3';
+      ctx.shadowColor = 'rgba(244,239,227,0.6)';
+      ctx.shadowBlur = 14;
+      positions[n].forEach(function(p){
+        ctx.beginPath();
+        ctx.arc(p[0]*size, p[1]*size, size*0.075, 0, Math.PI*2);
+        ctx.fill();
+      });
+
+      return new THREE.CanvasTexture(c);
+    }
+
+    function init(){
+      if(ready) return;
+      ready = true;
+
+      var w = diceCanvas.clientWidth || 300, h = diceCanvas.clientHeight || 300;
+      renderer = new THREE.WebGLRenderer({ canvas:diceCanvas, antialias:true, alpha:true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h, false);
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(30, w/h, 0.1, 100);
+      camera.position.set(0, 0, 6.6);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      var key = new THREE.DirectionalLight(0xfff2d0, 0.85);
+      key.position.set(2, 3, 4);
+      scene.add(key);
+      var rimLight = new THREE.DirectionalLight(0xbaff3d, 0.35);
+      rimLight.position.set(-3, -2, -2);
+      scene.add(rimLight);
+
+      var geo = new THREE.BoxGeometry(1.7, 1.7, 1.7);
+      var mats = FACE_ORDER.map(function(face){
+        return new THREE.MeshStandardMaterial({ map:makeFaceTexture(FACE_NUMBER[face]), metalness:0.15, roughness:0.6 });
+      });
+
+      dice = new THREE.Mesh(geo, mats);
+      group = new THREE.Group();
+      group.add(dice);
+      scene.add(group);
+
+      render();
+    }
+
+    function render(){ renderer.render(scene, camera); }
+
+    function resize(){
+      if(!ready) return;
+      var w = diceCanvas.clientWidth, h = diceCanvas.clientHeight;
+      if(!w || !h) return;
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+      render();
+    }
+
+    function normalForNumber(n){
+      for(var face in FACE_NUMBER){
+        if(FACE_NUMBER[face] === n) return FACE_NORMAL[face].clone();
+      }
+    }
+
+    function spin(target, tumbleMs, settleMs, reduceMotion, onDone){
+      init();
+      var targetQuat = new THREE.Quaternion().setFromUnitVectors(normalForNumber(target), new THREE.Vector3(0,0,1));
+
+      if(reduceMotion){
+        group.quaternion.copy(targetQuat);
+        render();
+        onDone();
+        return;
+      }
+
+      var axis = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize();
+      var speed = 7 + Math.random()*3;
+      var t0 = performance.now();
+      var startQuat = new THREE.Quaternion();
+
+      function tumbleStep(now){
+        if(now - t0 < tumbleMs){
+          group.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(axis, speed*0.016));
+          render();
+          requestAnimationFrame(tumbleStep);
+        } else {
+          startQuat.copy(group.quaternion);
+          requestAnimationFrame(settleStep(performance.now()));
+        }
+      }
+      function settleStep(start){
+        return function step(now){
+          var p = Math.min(1, (now - start) / settleMs);
+          var eased = 1 - Math.pow(1 - p, 3);
+          group.quaternion.copy(startQuat).slerp(targetQuat, eased);
+          render();
+          if(p < 1) requestAnimationFrame(step);
+          else { group.quaternion.copy(targetQuat); render(); onDone(); }
+        };
+      }
+
+      requestAnimationFrame(tumbleStep);
+    }
+
+    return { init:init, spin:spin, resize:resize };
+  })();
+
   /* ---------- SPIN: MONEDA ---------- */
 
   function spinCoin(){
@@ -1144,23 +1394,9 @@
     if(target === lastCoin && Math.random() < 0.5){
       target = target === 'cara' ? 'cruz' : 'cara';
     }
-
-    var targetMod = target === 'cara' ? 0 : 180;
-    var prevMod = ((coinRotation % 360) + 360) % 360;
-    var delta = ((targetMod - prevMod) + 360) % 360;
-
-    coinRotation += COIN_EXTRA_SPINS * 360 + delta;
-
     var reduceMotion = prefersReducedMotion();
-    coinEl.style.transition = reduceMotion
-      ? 'transform .01s linear'
-      : 'transform ' + (COIN_DURATION_MS / 1000) + 's cubic-bezier(0.2, 0.65, 0.2, 1)';
-    coinEl.style.transform = 'rotateY(' + coinRotation + 'deg)';
 
-    var done = false;
-    function finish(){
-      if(done) return;
-      done = true;
+    CoinGame.spin(target, COIN_TUMBLE_MS, COIN_SETTLE_MS, reduceMotion, function(){
       lastCoin = target;
 
       var label = target === 'cara' ? 'CARA' : 'CRUZ';
@@ -1179,10 +1415,7 @@
       });
 
       endSpin();
-    }
-
-    coinEl.addEventListener('transitionend', finish, { once:true });
-    setTimeout(finish, reduceMotion ? 100 : COIN_DURATION_MS + 400);
+    });
   }
 
   /* ---------- SPIN: DADO ---------- */
@@ -1192,28 +1425,9 @@
     if(target === lastDice){
       target = (target % 6) + 1;
     }
-
-    var rot = DICE_ROTATIONS[target];
-    var prevXmod = ((diceRotX % 360) + 360) % 360;
-    var prevYmod = ((diceRotY % 360) + 360) % 360;
-    var targetXmod = ((rot.x % 360) + 360) % 360;
-    var targetYmod = ((rot.y % 360) + 360) % 360;
-    var deltaX = ((targetXmod - prevXmod) + 360) % 360;
-    var deltaY = ((targetYmod - prevYmod) + 360) % 360;
-
-    diceRotX += DICE_EXTRA_TURNS * 360 + deltaX;
-    diceRotY += DICE_EXTRA_TURNS * 360 + deltaY;
-
     var reduceMotion = prefersReducedMotion();
-    diceEl.style.transition = reduceMotion
-      ? 'transform .01s linear'
-      : 'transform ' + (DICE_DURATION_MS / 1000) + 's cubic-bezier(0.2, 0.7, 0.25, 1)';
-    diceEl.style.transform = 'rotateX(' + diceRotX + 'deg) rotateY(' + diceRotY + 'deg)';
 
-    var done = false;
-    function finish(){
-      if(done) return;
-      done = true;
+    DiceGame.spin(target, DICE_TUMBLE_MS, DICE_SETTLE_MS, reduceMotion, function(){
       lastDice = target;
 
       resultEl.textContent = '🎲 ' + target;
@@ -1227,10 +1441,7 @@
       });
 
       endSpin();
-    }
-
-    diceEl.addEventListener('transitionend', finish, { once:true });
-    setTimeout(finish, reduceMotion ? 100 : DICE_DURATION_MS + 400);
+    });
   }
 
   /* ---------- SPIN ORCHESTRATION ---------- */
@@ -1297,6 +1508,11 @@
   hudStatus.textContent = HUD_STATUS_IDLE[currentMode];
   editToggle.hidden = currentMode !== 'ruleta';
   requestAnimationFrame(moveIndicator);
+  if(currentMode === 'moneda'){
+    requestAnimationFrame(function(){ CoinGame.init(); CoinGame.resize(); });
+  } else if(currentMode === 'dado'){
+    requestAnimationFrame(function(){ DiceGame.init(); DiceGame.resize(); });
+  }
   resetResult();
 })();
 </script>
