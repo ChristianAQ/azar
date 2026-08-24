@@ -297,6 +297,7 @@
   /* ---------- IMPOSTOR ---------- */
 
   #stage-impostor{ display:flex; align-items:center; justify-content:center; padding:16px; }
+  #stage-impostor[hidden]{ display:none; }
 
   .impostor-box{
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -361,6 +362,12 @@
   .impostor-card.is-word .impostor-card-text{ color:var(--neon); }
   .impostor-card.is-impostor{ border-color:rgba(255,93,120,0.55); }
   .impostor-card.is-impostor .impostor-card-text{ color:var(--coral); }
+
+  .impostor-card-subtext{
+    margin:0; font-size:12.5px; font-weight:700;
+    color:var(--dim); line-height:1.4;
+  }
+  .impostor-card-subtext[hidden]{ display:none; }
 
   /* ---------- CONTROLS ---------- */
 
@@ -464,6 +471,10 @@
   }
   .editor-row-input:focus{ outline:none; }
 
+  .editor-row-word{ align-items:center; }
+  .editor-row-col{ display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+  .editor-row-input-hint{ font-weight:600; font-size:12px; color:var(--dim); }
+
   .row-remove{
     appearance:none; border:none; background:transparent;
     color:var(--dim); font-size:16px; line-height:1;
@@ -472,6 +483,9 @@
   .row-remove:hover{ color:var(--coral); }
 
   .editor-add{ display:flex; gap:8px; margin-top:4px; }
+  .editor-add-word{ flex-wrap:wrap; }
+  .editor-add-word input{ flex:1 1 100%; }
+  .editor-add-word button{ flex:1 1 100%; padding:10px 16px; }
 
   .editor-add input{
     flex:1;
@@ -674,7 +688,7 @@
     <div class="stage-panel" id="stage-impostor" hidden>
       <div class="impostor-box" id="impostorSetup">
         <span class="impostor-emoji">🕵️</span>
-        <p class="impostor-lead">Un jugador es el impostor y no conoce la palabra secreta. Descubridlo debatiendo en voz alta.</p>
+        <p class="impostor-lead">Un jugador es el impostor y no conoce la palabra secreta, solo una pista. Descubridlo debatiendo en voz alta.</p>
         <div class="impostor-count-row">
           <span>Impostores</span>
           <div class="stepper">
@@ -692,6 +706,7 @@
         <div class="impostor-card" id="impostorCard">
           <span class="impostor-card-hint" id="impostorCardHint">🔒 Nadie más debe mirar</span>
           <p class="impostor-card-text" id="impostorCardText"></p>
+          <p class="impostor-card-subtext" id="impostorCardSubtext" hidden></p>
         </div>
       </div>
 
@@ -748,11 +763,12 @@
 
   <div class="editor" id="wordsEditor" hidden>
     <div class="editor-list" id="wordsList"></div>
-    <div class="editor-add">
+    <div class="editor-add editor-add-word">
       <input id="newWordInput" placeholder="Nueva palabra" maxlength="24">
+      <input id="newWordHintInput" placeholder="Pista para el impostor (opcional)" maxlength="40">
       <button id="addWordBtn">Añadir</button>
     </div>
-    <p class="editor-hint">Se elige una palabra al azar en cada ronda de Impostor. Se sincronizan entre dispositivos.</p>
+    <p class="editor-hint">Se elige una palabra al azar en cada ronda. El impostor no ve la palabra, ve la pista. Se sincronizan entre dispositivos.</p>
   </div>
 
 </div>
@@ -880,11 +896,31 @@ var DEFAULT_RETOS = [
   ];
 
   var DEFAULT_IMPOSTOR_WORDS = [
-    'Playa', 'Piscina', 'Discoteca', 'Universidad', 'Hospital',
-    'Aeropuerto', 'Gimnasio', 'Cine', 'Boda', 'Cumpleaños',
-    'Camping', 'Barbacoa', 'Karaoke', 'Concierto', 'Zoológico',
-    'Circo', 'Supermercado', 'Restaurante', 'Oficina', 'Casino',
-    'Peluquería', 'Biblioteca', 'Estadio', 'Crucero', 'Parque de atracciones'
+    { word: 'Playa', hint: 'Lugar de vacaciones' },
+    { word: 'Piscina', hint: 'Lugar para nadar' },
+    { word: 'Discoteca', hint: 'Lugar para salir de fiesta' },
+    { word: 'Universidad', hint: 'Lugar de estudios' },
+    { word: 'Hospital', hint: 'Lugar relacionado con la salud' },
+    { word: 'Aeropuerto', hint: 'Lugar de viajes' },
+    { word: 'Gimnasio', hint: 'Lugar para hacer ejercicio' },
+    { word: 'Cine', hint: 'Lugar de entretenimiento' },
+    { word: 'Boda', hint: 'Una celebración' },
+    { word: 'Cumpleaños', hint: 'Una celebración' },
+    { word: 'Camping', hint: 'Actividad al aire libre' },
+    { word: 'Barbacoa', hint: 'Una comida en grupo' },
+    { word: 'Karaoke', hint: 'Actividad para cantar' },
+    { word: 'Concierto', hint: 'Evento musical' },
+    { word: 'Zoológico', hint: 'Lugar con animales' },
+    { word: 'Circo', hint: 'Espectáculo con acróbatas' },
+    { word: 'Supermercado', hint: 'Lugar para comprar comida' },
+    { word: 'Restaurante', hint: 'Lugar para comer' },
+    { word: 'Oficina', hint: 'Lugar de trabajo' },
+    { word: 'Casino', hint: 'Lugar de apuestas' },
+    { word: 'Peluquería', hint: 'Lugar para cortarse el pelo' },
+    { word: 'Biblioteca', hint: 'Lugar tranquilo con libros' },
+    { word: 'Estadio', hint: 'Lugar de eventos deportivos' },
+    { word: 'Crucero', hint: 'Un viaje en barco' },
+    { word: 'Parque de atracciones', hint: 'Lugar con atracciones y diversión' }
   ];
 
   var COIN_CAPTIONS = [
@@ -944,6 +980,7 @@ var DEFAULT_RETOS = [
   var wordsEditor = document.getElementById('wordsEditor');
   var wordsList = document.getElementById('wordsList');
   var newWordInput = document.getElementById('newWordInput');
+  var newWordHintInput = document.getElementById('newWordHintInput');
   var addWordBtn = document.getElementById('addWordBtn');
 
   var impostorSetup = document.getElementById('impostorSetup');
@@ -958,6 +995,7 @@ var DEFAULT_RETOS = [
   var impostorCard = document.getElementById('impostorCard');
   var impostorCardHint = document.getElementById('impostorCardHint');
   var impostorCardText = document.getElementById('impostorCardText');
+  var impostorCardSubtext = document.getElementById('impostorCardSubtext');
   var impostorSummaryNames = document.getElementById('impostorSummaryNames');
   var impostorSummaryWord = document.getElementById('impostorSummaryWord');
 
@@ -1033,12 +1071,19 @@ var DEFAULT_RETOS = [
     if(!skipSync) syncRetosToCloud();
   }
 
+  function normalizeImpostorWords(list){
+    return list.map(function(item){
+      if(typeof item === 'string') return { word: item, hint: '' };
+      return { word: (item && item.word) || '', hint: (item && item.hint) || '' };
+    }).filter(function(item){ return item.word; });
+  }
+
   function loadImpostorWords(){
     try{
       var raw = localStorage.getItem(IMPOSTOR_WORDS_KEY);
       if(raw){
         var parsed = JSON.parse(raw);
-        if(Array.isArray(parsed) && parsed.length) return parsed;
+        if(Array.isArray(parsed) && parsed.length) return normalizeImpostorWords(parsed);
       }
     }catch(e){}
     return DEFAULT_IMPOSTOR_WORDS.slice();
@@ -1106,7 +1151,7 @@ var DEFAULT_RETOS = [
         var data = snap.data();
         if(!data) return;
         applyingRemoteWords = true;
-        if(Array.isArray(data.words) && data.words.length) impostorWords = data.words;
+        if(Array.isArray(data.words) && data.words.length) impostorWords = normalizeImpostorWords(data.words);
         saveImpostorWords(true);
         renderWordsEditor();
         applyingRemoteWords = false;
@@ -1270,18 +1315,35 @@ var DEFAULT_RETOS = [
 
   function renderWordsEditor(){
     wordsList.innerHTML = '';
-    impostorWords.forEach(function(text, i){
+    impostorWords.forEach(function(item, i){
       var row = document.createElement('div');
-      row.className = 'editor-row';
+      row.className = 'editor-row editor-row-word';
 
-      var input = document.createElement('input');
-      input.className = 'editor-row-input';
-      input.value = text;
-      input.maxLength = 24;
-      input.addEventListener('input', function(){
-        impostorWords[i] = input.value;
+      var col = document.createElement('div');
+      col.className = 'editor-row-col';
+
+      var wordInput = document.createElement('input');
+      wordInput.className = 'editor-row-input';
+      wordInput.value = item.word;
+      wordInput.placeholder = 'Palabra';
+      wordInput.maxLength = 24;
+      wordInput.addEventListener('input', function(){
+        impostorWords[i].word = wordInput.value;
         saveImpostorWords();
       });
+
+      var hintInput = document.createElement('input');
+      hintInput.className = 'editor-row-input editor-row-input-hint';
+      hintInput.value = item.hint;
+      hintInput.placeholder = 'Pista para el impostor';
+      hintInput.maxLength = 40;
+      hintInput.addEventListener('input', function(){
+        impostorWords[i].hint = hintInput.value;
+        saveImpostorWords();
+      });
+
+      col.appendChild(wordInput);
+      col.appendChild(hintInput);
 
       var removeBtn = document.createElement('button');
       removeBtn.className = 'row-remove';
@@ -1294,7 +1356,7 @@ var DEFAULT_RETOS = [
         renderWordsEditor();
       });
 
-      row.appendChild(input);
+      row.appendChild(col);
       row.appendChild(removeBtn);
       wordsList.appendChild(row);
     });
@@ -1302,11 +1364,13 @@ var DEFAULT_RETOS = [
   }
 
   function addWord(){
-    var text = newWordInput.value.trim();
-    if(!text || impostorWords.length >= MAX_WORDS) return;
-    impostorWords.push(text);
+    var word = newWordInput.value.trim();
+    var hint = newWordHintInput.value.trim();
+    if(!word || impostorWords.length >= MAX_WORDS) return;
+    impostorWords.push({ word: word, hint: hint });
     saveImpostorWords();
     newWordInput.value = '';
+    newWordHintInput.value = '';
     renderWordsEditor();
   }
 
@@ -1366,10 +1430,12 @@ var DEFAULT_RETOS = [
     impostorIdxs.forEach(function(idx){ impostorSet[idx] = true; });
 
     var wordsPool = impostorWords.length ? impostorWords : DEFAULT_IMPOSTOR_WORDS;
+    var chosen = pickRandom(wordsPool);
 
     impostorGame = {
       impostorSet: impostorSet,
-      word: pickRandom(wordsPool)
+      word: chosen.word,
+      hint: chosen.hint
     };
     impostorTurnPos = 0;
     impostorCardFlipped = false;
@@ -1384,6 +1450,8 @@ var DEFAULT_RETOS = [
     impostorCard.classList.remove('is-word', 'is-impostor');
     impostorCardHint.hidden = false;
     impostorCardText.textContent = '';
+    impostorCardSubtext.textContent = '';
+    impostorCardSubtext.hidden = true;
     impostorCardFlipped = false;
     actionLabel.textContent = 'Mostrar mi rol';
     hudStatus.textContent = 'Turno de ' + name;
@@ -1394,8 +1462,19 @@ var DEFAULT_RETOS = [
   function revealImpostorCard(){
     var isImpostor = !!impostorGame.impostorSet[impostorTurnPos];
     impostorCardHint.hidden = true;
-    impostorCardText.textContent = isImpostor ? '🕵️ ERES EL IMPOSTOR' : impostorGame.word;
     impostorCard.classList.add(isImpostor ? 'is-impostor' : 'is-word');
+    if(isImpostor){
+      impostorCardText.textContent = '🕵️ ERES EL IMPOSTOR';
+      if(impostorGame.hint){
+        impostorCardSubtext.textContent = 'Pista: ' + impostorGame.hint;
+        impostorCardSubtext.hidden = false;
+      } else {
+        impostorCardSubtext.hidden = true;
+      }
+    } else {
+      impostorCardText.textContent = impostorGame.word;
+      impostorCardSubtext.hidden = true;
+    }
     impostorCardFlipped = true;
     var isLast = impostorTurnPos >= players.length - 1;
     actionLabel.textContent = isLast ? 'Ocultar y empezar debate' : 'Ocultar y pasar';
@@ -2157,6 +2236,9 @@ var DEFAULT_RETOS = [
 
   addWordBtn.addEventListener('click', addWord);
   newWordInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); addWord(); }
+  });
+  newWordHintInput.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){ e.preventDefault(); addWord(); }
   });
 
