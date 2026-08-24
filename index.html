@@ -331,6 +331,38 @@
     border-radius:999px;
     cursor:pointer;
   }
+  .edit-toggle.active{ color:var(--accent); border-color:var(--accent); }
+
+  .editor-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  .switch-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:rgba(10,8,19,0.5);
+    border-radius:10px;
+    padding:10px 12px;
+  }
+  .switch-row span{ font-weight:700; font-size:14px; }
+  .switch{
+    position:relative; display:inline-block;
+    width:42px; height:24px; flex-shrink:0;
+  }
+  .switch input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .switch-track{
+    position:absolute; inset:0;
+    background:rgba(244,239,227,0.18);
+    border-radius:999px;
+    transition:background .2s ease;
+  }
+  .switch-track::before{
+    content:'';
+    position:absolute; top:3px; left:3px;
+    width:18px; height:18px;
+    background:var(--bone);
+    border-radius:50%;
+    transition:transform .2s ease;
+  }
+  .switch input:checked + .switch-track{ background:var(--accent); }
+  .switch input:checked + .switch-track::before{ transform:translateX(18px); }
 
   .editor{
     width:100%;
@@ -468,6 +500,7 @@
     color:var(--bone);
     opacity:.9;
   }
+  .celebrate-caption[hidden]{ display:none; }
 
   .celebrate-close{
     appearance:none; border:none;
@@ -562,7 +595,10 @@
 
   <p class="result" id="result" aria-live="polite"></p>
 
-  <button class="edit-toggle" id="editToggle">Editar jugadores</button>
+  <div class="editor-actions">
+    <button class="edit-toggle" id="editToggle">Editar jugadores</button>
+    <button class="edit-toggle" id="editRetosToggle">Editar retos</button>
+  </div>
 
   <div class="editor" id="editor" hidden>
     <div class="editor-list" id="editorList"></div>
@@ -571,6 +607,22 @@
       <button id="addPlayerBtn">Añadir</button>
     </div>
     <p class="editor-hint">Entre 2 y 10 jugadores. Se guardan en este dispositivo.</p>
+  </div>
+
+  <div class="editor" id="retosEditor" hidden>
+    <label class="switch-row">
+      <span>Habilitar retos</span>
+      <span class="switch">
+        <input type="checkbox" id="retosEnabledToggle">
+        <span class="switch-track"></span>
+      </span>
+    </label>
+    <div class="editor-list" id="retosList"></div>
+    <div class="editor-add">
+      <input id="newRetoInput" placeholder="Nuevo reto" maxlength="120">
+      <button id="addRetoBtn">Añadir</button>
+    </div>
+    <p class="editor-hint">Si está desactivado, la ruleta no muestra retos al ganar. Los retos se sincronizan entre dispositivos.</p>
   </div>
 
 </div>
@@ -587,6 +639,8 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 (function(){
   "use strict";
@@ -597,6 +651,25 @@
   var MODE_KEY = 'ruleta-chupitos:mode';
   var DEFAULT_PLAYERS = ['Chris','Darwin','Byron','Joni','Andrés','Luigi'];
   var MIN_PLAYERS = 2, MAX_PLAYERS = 10;
+
+  var RETOS_KEY = 'ruleta-chupitos:retos';
+  var RETOS_ENABLED_KEY = 'ruleta-chupitos:retos-enabled';
+  var MAX_RETOS = 60;
+
+  /* Configuración de Firebase (Firestore).
+     Sustituye estos valores por los de tu propio proyecto en
+     https://console.firebase.google.com -> Configuración del proyecto -> Tus apps -> SDK de Firebase.
+     Mientras los valores sean los de ejemplo, la app funciona igual pero solo
+     guarda los retos en este dispositivo (localStorage), sin sincronizar. */
+  var FIREBASE_CONFIG = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    projectId: "TU_PROYECTO",
+    storageBucket: "TU_PROYECTO.appspot.com",
+    messagingSenderId: "000000000000",
+    appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxxxx"
+  };
+  var RETOS_DOC_PATH = { collection: 'ruleta', doc: 'retos' };
 
   var SPIN_DURATION_MS = 3200;
   var EXTRA_SPINS = 5;
@@ -628,7 +701,7 @@
   var HUD_STATUS_IDLE = { ruleta:'Listo', moneda:'Listo', dado:'Listo' };
   var HUD_STATUS_BUSY = { ruleta:'Girando…', moneda:'En el aire…', dado:'Rodando…' };
 
-var WINNER_CAPTIONS = [
+var DEFAULT_RETOS = [
     'RETO: Chupito o tres flexiones 🔥',
     'Bebes tú y la persona que elijas 🍻',
     'A beber! que la noche es joven',
@@ -712,6 +785,13 @@ var WINNER_CAPTIONS = [
   var newPlayerInput = document.getElementById('newPlayerInput');
   var addPlayerBtn = document.getElementById('addPlayerBtn');
 
+  var editRetosToggle = document.getElementById('editRetosToggle');
+  var retosEditor = document.getElementById('retosEditor');
+  var retosList = document.getElementById('retosList');
+  var newRetoInput = document.getElementById('newRetoInput');
+  var addRetoBtn = document.getElementById('addRetoBtn');
+  var retosEnabledToggle = document.getElementById('retosEnabledToggle');
+
   var celebrateEl = document.getElementById('celebrate');
   var celebrateIcon = document.getElementById('celebrateIcon');
   var celebrateEyebrow = document.getElementById('celebrateEyebrow');
@@ -732,6 +812,9 @@ var WINNER_CAPTIONS = [
   var lastCoin = '';
   var lastDice = -1;
 
+  var retos = loadRetos();
+  var retosEnabled = loadRetosEnabled();
+
   /* ---------- STORAGE ---------- */
 
   function loadPlayers(){
@@ -747,6 +830,33 @@ var WINNER_CAPTIONS = [
   function savePlayers(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(players)); }catch(e){}
   }
+
+  function loadRetos(){
+    try{
+      var raw = localStorage.getItem(RETOS_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) return parsed;
+      }
+    }catch(e){}
+    return DEFAULT_RETOS.slice();
+  }
+  function saveRetos(skipSync){
+    try{ localStorage.setItem(RETOS_KEY, JSON.stringify(retos)); }catch(e){}
+    if(!skipSync) syncRetosToCloud();
+  }
+  function loadRetosEnabled(){
+    try{
+      var raw = localStorage.getItem(RETOS_ENABLED_KEY);
+      if(raw !== null) return raw === 'true';
+    }catch(e){}
+    return true;
+  }
+  function saveRetosEnabled(skipSync){
+    try{ localStorage.setItem(RETOS_ENABLED_KEY, String(retosEnabled)); }catch(e){}
+    if(!skipSync) syncRetosToCloud();
+  }
+
   function loadMode(){
     try{
       var m = localStorage.getItem(MODE_KEY);
@@ -756,6 +866,48 @@ var WINNER_CAPTIONS = [
   }
   function saveMode(m){
     try{ localStorage.setItem(MODE_KEY, m); }catch(e){}
+  }
+
+  /* ---------- FIREBASE (retos compartidos) ---------- */
+
+  var retosDocRef = null;
+  var applyingRemoteRetos = false;
+  var syncTimer = null;
+
+  (function initFirebase(){
+    try{
+      if(typeof firebase === 'undefined') return;
+      if(!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'TU_API_KEY') return;
+      firebase.initializeApp(FIREBASE_CONFIG);
+      var db = firebase.firestore();
+      retosDocRef = db.collection(RETOS_DOC_PATH.collection).doc(RETOS_DOC_PATH.doc);
+
+      retosDocRef.onSnapshot(function(snap){
+        var data = snap.data();
+        if(!data) return;
+        applyingRemoteRetos = true;
+        if(Array.isArray(data.list)) retos = data.list;
+        if(typeof data.enabled === 'boolean') retosEnabled = data.enabled;
+        saveRetos(true);
+        saveRetosEnabled(true);
+        renderRetosEditor();
+        applyingRemoteRetos = false;
+      }, function(err){
+        console.warn('No se pudo sincronizar retos con Firebase:', err);
+      });
+    }catch(e){
+      console.warn('Firebase no disponible, los retos solo se guardan en este dispositivo.', e);
+    }
+  })();
+
+  function syncRetosToCloud(){
+    if(!retosDocRef || applyingRemoteRetos) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(function(){
+      retosDocRef.set({ list: retos, enabled: retosEnabled }, { merge:true }).catch(function(err){
+        console.warn('No se pudo guardar retos en Firebase:', err);
+      });
+    }, 400);
   }
 
   /* ---------- HELPERS ---------- */
@@ -839,6 +991,45 @@ var WINNER_CAPTIONS = [
     resetResult();
   }
 
+  /* ---------- RENDER: RETOS EDITOR ---------- */
+
+  function renderRetosEditor(){
+    retosEnabledToggle.checked = retosEnabled;
+
+    retosList.innerHTML = '';
+    retos.forEach(function(text, i){
+      var row = document.createElement('div');
+      row.className = 'editor-row';
+
+      var span = document.createElement('span');
+      span.textContent = text;
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'row-remove';
+      removeBtn.setAttribute('aria-label', 'Quitar reto');
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', function(){
+        retos.splice(i, 1);
+        saveRetos();
+        renderRetosEditor();
+      });
+
+      row.appendChild(span);
+      row.appendChild(removeBtn);
+      retosList.appendChild(row);
+    });
+    addRetoBtn.disabled = retos.length >= MAX_RETOS;
+  }
+
+  function addReto(){
+    var text = newRetoInput.value.trim();
+    if(!text || retos.length >= MAX_RETOS) return;
+    retos.push(text);
+    saveRetos();
+    newRetoInput.value = '';
+    renderRetosEditor();
+  }
+
   /* ---------- MODE SWITCHING ---------- */
 
   function moveIndicator(){
@@ -891,7 +1082,11 @@ var WINNER_CAPTIONS = [
 
     var isRuleta = mode === 'ruleta';
     editToggle.hidden = !isRuleta;
-    if(!isRuleta) editor.setAttribute('hidden', '');
+    editRetosToggle.hidden = !isRuleta;
+    if(!isRuleta){
+      editor.setAttribute('hidden', '');
+      retosEditor.setAttribute('hidden', '');
+    }
 
     resetResult();
   }
@@ -938,7 +1133,13 @@ var WINNER_CAPTIONS = [
     celebrateIcon.textContent = opts.icon;
     celebrateEyebrow.textContent = opts.eyebrow;
     celebrateName.textContent = opts.name;
-    celebrateCaption.textContent = opts.caption;
+    if(opts.caption){
+      celebrateCaption.textContent = opts.caption;
+      celebrateCaption.removeAttribute('hidden');
+    } else {
+      celebrateCaption.textContent = '';
+      celebrateCaption.setAttribute('hidden', '');
+    }
 
     if(!prefersReducedMotion()) spawnConfetti();
 
@@ -1004,7 +1205,7 @@ var WINNER_CAPTIONS = [
         icon: '🥃',
         eyebrow: 'Le tocó beber a',
         name: name,
-        caption: pickRandom(WINNER_CAPTIONS)
+        caption: (retosEnabled && retos.length) ? pickRandom(retos) : ''
       });
 
       endSpin();
@@ -1486,6 +1687,8 @@ var WINNER_CAPTIONS = [
 
   editToggle.addEventListener('click', function(){
     var isHidden = editor.hasAttribute('hidden');
+    retosEditor.setAttribute('hidden', '');
+    editRetosToggle.textContent = 'Editar retos';
     if(isHidden){
       editor.removeAttribute('hidden');
       renderEditor();
@@ -1499,6 +1702,30 @@ var WINNER_CAPTIONS = [
   addPlayerBtn.addEventListener('click', addPlayer);
   newPlayerInput.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){ e.preventDefault(); addPlayer(); }
+  });
+
+  editRetosToggle.addEventListener('click', function(){
+    var isHidden = retosEditor.hasAttribute('hidden');
+    editor.setAttribute('hidden', '');
+    editToggle.textContent = 'Editar jugadores';
+    if(isHidden){
+      retosEditor.removeAttribute('hidden');
+      renderRetosEditor();
+      editRetosToggle.textContent = 'Ocultar retos';
+    } else {
+      retosEditor.setAttribute('hidden', '');
+      editRetosToggle.textContent = 'Editar retos';
+    }
+  });
+
+  retosEnabledToggle.addEventListener('change', function(){
+    retosEnabled = retosEnabledToggle.checked;
+    saveRetosEnabled();
+  });
+
+  addRetoBtn.addEventListener('click', addReto);
+  newRetoInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); addReto(); }
   });
 
   /* ---------- INIT ---------- */
@@ -1518,6 +1745,7 @@ var WINNER_CAPTIONS = [
   actionIcon.innerHTML = ACTION_ICON[currentMode];
   hudStatus.textContent = HUD_STATUS_IDLE[currentMode];
   editToggle.hidden = currentMode !== 'ruleta';
+  editRetosToggle.hidden = currentMode !== 'ruleta';
   requestAnimationFrame(moveIndicator);
   if(currentMode === 'moneda'){
     requestAnimationFrame(function(){ CoinGame.init(); CoinGame.resize(); });
