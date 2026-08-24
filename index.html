@@ -60,6 +60,7 @@
   body.mode-ruleta{ --accent:var(--neon); --accent-dim:var(--neon-dim); }
   body.mode-moneda{ --accent:var(--gold); --accent-dim:var(--gold-dim); }
   body.mode-dado{ --accent:var(--violet); --accent-dim:var(--violet-dim); }
+  body.mode-impostor{ --accent:var(--coral); --accent-dim:rgba(255,93,120,0.18); }
 
   .app{
     width:100%;
@@ -293,6 +294,74 @@
     pointer-events:none;
   }
 
+  /* ---------- IMPOSTOR ---------- */
+
+  #stage-impostor{ display:flex; align-items:center; justify-content:center; padding:16px; }
+
+  .impostor-box{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center; width:100%; height:100%;
+  }
+  .impostor-box[hidden]{ display:none; }
+
+  .impostor-emoji{ font-size:44px; line-height:1; }
+
+  .impostor-lead{
+    margin:0; font-size:13.5px; color:var(--dim);
+    max-width:260px; line-height:1.5;
+  }
+
+  .impostor-count-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    background:rgba(10,8,19,0.5);
+    border-radius:10px;
+    padding:10px 14px;
+    width:100%; max-width:220px;
+  }
+  .impostor-count-row span:first-child{ font-weight:700; font-size:13.5px; }
+
+  .stepper{ display:flex; align-items:center; gap:12px; }
+  .stepper button{
+    appearance:none; border:1px solid var(--line-strong); background:transparent;
+    color:var(--bone); width:26px; height:26px; border-radius:50%;
+    font-size:16px; font-weight:800; cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stepper button:disabled{ opacity:.35; cursor:default; }
+  #impostorCountValue{ font-weight:800; font-size:15px; min-width:14px; text-align:center; }
+
+  .impostor-hint{ margin:0; font-size:12px; color:var(--dim); min-height:14px; }
+  .impostor-hint.error{ color:var(--coral); }
+
+  .impostor-turn-label{
+    margin:0; font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--dim); font-weight:700;
+  }
+  .impostor-turn-name{
+    margin:0; font-family:'Unbounded',sans-serif; font-weight:800;
+    font-size:clamp(22px,7vw,28px); color:var(--bone); word-break:break-word;
+  }
+
+  .impostor-card{
+    width:min(68vw,220px);
+    aspect-ratio:3/4;
+    border-radius:18px;
+    background:var(--panel-2);
+    border:2px solid rgba(227,183,103,0.35);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; padding:18px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.4);
+    transition:border-color .3s ease;
+  }
+  .impostor-card-hint{ font-size:12px; color:var(--dim); font-weight:700; }
+  .impostor-card-text{
+    margin:0; font-family:'Unbounded',sans-serif; font-weight:800;
+    font-size:clamp(16px,5.6vw,20px); line-height:1.3;
+  }
+  .impostor-card.is-word .impostor-card-text{ color:var(--neon); }
+  .impostor-card.is-impostor{ border-color:rgba(255,93,120,0.55); }
+  .impostor-card.is-impostor .impostor-card-text{ color:var(--coral); }
+
   /* ---------- CONTROLS ---------- */
 
   .action-btn{
@@ -352,6 +421,7 @@
     background:rgba(244,239,227,0.18);
     border-radius:999px;
     transition:background .2s ease;
+    pointer-events:none;
   }
   .switch-track::before{
     content:'';
@@ -383,6 +453,16 @@
     padding:9px 12px;
   }
   .editor-row span{ font-weight:700; font-size:14px; }
+
+  .editor-row-input{
+    flex:1; min-width:0;
+    appearance:none; border:none; background:transparent;
+    color:var(--bone);
+    font-family:'Manrope',sans-serif;
+    font-weight:700; font-size:14px;
+    padding:0;
+  }
+  .editor-row-input:focus{ outline:none; }
 
   .row-remove{
     appearance:none; border:none; background:transparent;
@@ -546,6 +626,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="8.3" cy="8.3" r="1" fill="currentColor" stroke="none"/><circle cx="15.7" cy="8.3" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="8.3" cy="15.7" r="1" fill="currentColor" stroke="none"/><circle cx="15.7" cy="15.7" r="1" fill="currentColor" stroke="none"/></svg>
       <span>Dado</span>
     </button>
+    <button class="mode-tab" data-mode="impostor" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10c0-3 3.5-5 8-5s8 2 8 5v1c0 4-3.5 8-8 9-4.5-1-8-5-8-9v-1Z"/><circle cx="9" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.1" fill="currentColor" stroke="none"/></svg>
+      <span>Impostor</span>
+    </button>
   </div>
 
   <div class="stage-shell" id="stageShell">
@@ -586,6 +670,42 @@
         <canvas id="diceCanvas"></canvas>
       </div>
     </div>
+
+    <div class="stage-panel" id="stage-impostor" hidden>
+      <div class="impostor-box" id="impostorSetup">
+        <span class="impostor-emoji">🕵️</span>
+        <p class="impostor-lead">Un jugador es el impostor y no conoce la palabra secreta. Descubridlo debatiendo en voz alta.</p>
+        <div class="impostor-count-row">
+          <span>Impostores</span>
+          <div class="stepper">
+            <button type="button" id="impostorCountMinus" aria-label="Menos impostores">−</button>
+            <span id="impostorCountValue">1</span>
+            <button type="button" id="impostorCountPlus" aria-label="Más impostores">+</button>
+          </div>
+        </div>
+        <p class="impostor-hint" id="impostorSetupHint"></p>
+      </div>
+
+      <div class="impostor-box" id="impostorReveal" hidden>
+        <p class="impostor-turn-label">Pasa el móvil a</p>
+        <p class="impostor-turn-name" id="impostorTurnName">—</p>
+        <div class="impostor-card" id="impostorCard">
+          <span class="impostor-card-hint" id="impostorCardHint">🔒 Nadie más debe mirar</span>
+          <p class="impostor-card-text" id="impostorCardText"></p>
+        </div>
+      </div>
+
+      <div class="impostor-box" id="impostorDiscuss" hidden>
+        <span class="impostor-emoji">🗣️</span>
+        <p class="impostor-lead">Debatid en voz alta sobre la palabra secreta y descubrid quién no la conoce.</p>
+      </div>
+
+      <div class="impostor-box" id="impostorSummary" hidden>
+        <p class="impostor-turn-label">El impostor era</p>
+        <p class="impostor-turn-name" id="impostorSummaryNames">—</p>
+        <p class="impostor-hint">Palabra secreta: <strong id="impostorSummaryWord">—</strong></p>
+      </div>
+    </div>
   </div>
 
   <button class="action-btn" id="actionBtn">
@@ -598,6 +718,7 @@
   <div class="editor-actions">
     <button class="edit-toggle" id="editToggle">Editar jugadores</button>
     <button class="edit-toggle" id="editRetosToggle">Editar retos</button>
+    <button class="edit-toggle" id="editWordsToggle">Editar palabras</button>
   </div>
 
   <div class="editor" id="editor" hidden>
@@ -623,6 +744,15 @@
       <button id="addRetoBtn">Añadir</button>
     </div>
     <p class="editor-hint">Si está desactivado, la ruleta no muestra retos al ganar. Los retos se sincronizan entre dispositivos.</p>
+  </div>
+
+  <div class="editor" id="wordsEditor" hidden>
+    <div class="editor-list" id="wordsList"></div>
+    <div class="editor-add">
+      <input id="newWordInput" placeholder="Nueva palabra" maxlength="24">
+      <button id="addWordBtn">Añadir</button>
+    </div>
+    <p class="editor-hint">Se elige una palabra al azar en cada ronda de Impostor. Se sincronizan entre dispositivos.</p>
   </div>
 
 </div>
@@ -656,6 +786,12 @@
   var RETOS_ENABLED_KEY = 'ruleta-chupitos:retos-enabled';
   var MAX_RETOS = 60;
 
+  var IMPOSTOR_WORDS_KEY = 'ruleta-chupitos:impostor-words';
+  var IMPOSTOR_COUNT_KEY = 'ruleta-chupitos:impostor-count';
+  var MAX_WORDS = 60;
+  var MIN_IMPOSTOR_PLAYERS = 3;
+  var MAX_IMPOSTOR_COUNT = 2;
+
   /* Configuración de Firebase (Firestore).
      Sustituye estos valores por los de tu propio proyecto en
      https://console.firebase.google.com -> Configuración del proyecto -> Tus apps -> SDK de Firebase.
@@ -670,6 +806,7 @@
     appId: "1:914154379498:web:8ca0664ba033d5409adf93"
   };
   var RETOS_DOC_PATH = { collection: 'ruleta', doc: 'retos' };
+  var IMPOSTOR_DOC_PATH = { collection: 'ruleta', doc: 'impostor' };
 
   var SPIN_DURATION_MS = 3200;
   var EXTRA_SPINS = 5;
@@ -684,7 +821,8 @@
   var IDLE_TEXT = {
     ruleta: 'Toca girar y que decida la suerte',
     moneda: 'Lanza la moneda y que decida el destino',
-    dado: 'Tira el dado y acepta tu suerte'
+    dado: 'Tira el dado y acepta tu suerte',
+    impostor: 'Reparte los roles y descubre quién miente'
   };
   var IDLE_EASTER_EGGS_RULETA = [
     'Si tienes miedo, este es tu momento para decirlo…',
@@ -692,14 +830,15 @@
     ''
   ];
 
-  var ACTION_LABEL = { ruleta:'Girar', moneda:'Lanzar moneda', dado:'Tirar dado' };
+  var ACTION_LABEL = { ruleta:'Girar', moneda:'Lanzar moneda', dado:'Tirar dado', impostor:'Repartir roles' };
   var ACTION_ICON = {
     ruleta: '<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>',
     moneda: '<circle cx="12" cy="12" r="8.5"/><path d="M9 12h6M12 9v6"/>',
-    dado: '<rect x="4.5" y="4.5" width="15" height="15" rx="4"/><circle cx="9" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.1" fill="currentColor" stroke="none"/>'
+    dado: '<rect x="4.5" y="4.5" width="15" height="15" rx="4"/><circle cx="9" cy="9" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.1" fill="currentColor" stroke="none"/>',
+    impostor: '<path d="M4 10c0-3 3.5-5 8-5s8 2 8 5v1c0 4-3.5 8-8 9-4.5-1-8-5-8-9v-1Z"/><circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.2" fill="currentColor" stroke="none"/>'
   };
-  var HUD_STATUS_IDLE = { ruleta:'Listo', moneda:'Listo', dado:'Listo' };
-  var HUD_STATUS_BUSY = { ruleta:'Girando…', moneda:'En el aire…', dado:'Rodando…' };
+  var HUD_STATUS_IDLE = { ruleta:'Listo', moneda:'Listo', dado:'Listo', impostor:'Listo' };
+  var HUD_STATUS_BUSY = { ruleta:'Girando…', moneda:'En el aire…', dado:'Rodando…', impostor:'En juego…' };
 
 var DEFAULT_RETOS = [
     'RETO: Chupito o tres flexiones 🔥',
@@ -740,6 +879,14 @@ var DEFAULT_RETOS = [
     'Si tu nombre tiene una A elige quien bebe por ti'
   ];
 
+  var DEFAULT_IMPOSTOR_WORDS = [
+    'Playa', 'Piscina', 'Discoteca', 'Universidad', 'Hospital',
+    'Aeropuerto', 'Gimnasio', 'Cine', 'Boda', 'Cumpleaños',
+    'Camping', 'Barbacoa', 'Karaoke', 'Concierto', 'Zoológico',
+    'Circo', 'Supermercado', 'Restaurante', 'Oficina', 'Casino',
+    'Peluquería', 'Biblioteca', 'Estadio', 'Crucero', 'Parque de atracciones'
+  ];
+
   var COIN_CAPTIONS = [
     ''
   ];
@@ -767,7 +914,8 @@ var DEFAULT_RETOS = [
   var stagePanels = {
     ruleta: document.getElementById('stage-ruleta'),
     moneda: document.getElementById('stage-moneda'),
-    dado: document.getElementById('stage-dado')
+    dado: document.getElementById('stage-dado'),
+    impostor: document.getElementById('stage-impostor')
   };
   var hudStatus = document.getElementById('hudStatus');
 
@@ -792,6 +940,27 @@ var DEFAULT_RETOS = [
   var addRetoBtn = document.getElementById('addRetoBtn');
   var retosEnabledToggle = document.getElementById('retosEnabledToggle');
 
+  var editWordsToggle = document.getElementById('editWordsToggle');
+  var wordsEditor = document.getElementById('wordsEditor');
+  var wordsList = document.getElementById('wordsList');
+  var newWordInput = document.getElementById('newWordInput');
+  var addWordBtn = document.getElementById('addWordBtn');
+
+  var impostorSetup = document.getElementById('impostorSetup');
+  var impostorReveal = document.getElementById('impostorReveal');
+  var impostorDiscuss = document.getElementById('impostorDiscuss');
+  var impostorSummary = document.getElementById('impostorSummary');
+  var impostorCountValue = document.getElementById('impostorCountValue');
+  var impostorCountMinus = document.getElementById('impostorCountMinus');
+  var impostorCountPlus = document.getElementById('impostorCountPlus');
+  var impostorSetupHint = document.getElementById('impostorSetupHint');
+  var impostorTurnName = document.getElementById('impostorTurnName');
+  var impostorCard = document.getElementById('impostorCard');
+  var impostorCardHint = document.getElementById('impostorCardHint');
+  var impostorCardText = document.getElementById('impostorCardText');
+  var impostorSummaryNames = document.getElementById('impostorSummaryNames');
+  var impostorSummaryWord = document.getElementById('impostorSummaryWord');
+
   var celebrateEl = document.getElementById('celebrate');
   var celebrateIcon = document.getElementById('celebrateIcon');
   var celebrateEyebrow = document.getElementById('celebrateEyebrow');
@@ -814,6 +983,13 @@ var DEFAULT_RETOS = [
 
   var retos = loadRetos();
   var retosEnabled = loadRetosEnabled();
+
+  var impostorWords = loadImpostorWords();
+  var impostorCount = loadImpostorCount();
+  var impostorPhase = 'setup';
+  var impostorGame = null;
+  var impostorTurnPos = 0;
+  var impostorCardFlipped = false;
 
   /* ---------- STORAGE ---------- */
 
@@ -857,10 +1033,35 @@ var DEFAULT_RETOS = [
     if(!skipSync) syncRetosToCloud();
   }
 
+  function loadImpostorWords(){
+    try{
+      var raw = localStorage.getItem(IMPOSTOR_WORDS_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    }catch(e){}
+    return DEFAULT_IMPOSTOR_WORDS.slice();
+  }
+  function saveImpostorWords(skipSync){
+    try{ localStorage.setItem(IMPOSTOR_WORDS_KEY, JSON.stringify(impostorWords)); }catch(e){}
+    if(!skipSync) syncImpostorWordsToCloud();
+  }
+  function loadImpostorCount(){
+    try{
+      var n = parseInt(localStorage.getItem(IMPOSTOR_COUNT_KEY), 10);
+      if(n === 1 || n === 2) return n;
+    }catch(e){}
+    return 1;
+  }
+  function saveImpostorCount(){
+    try{ localStorage.setItem(IMPOSTOR_COUNT_KEY, String(impostorCount)); }catch(e){}
+  }
+
   function loadMode(){
     try{
       var m = localStorage.getItem(MODE_KEY);
-      if(m === 'ruleta' || m === 'moneda' || m === 'dado') return m;
+      if(m === 'ruleta' || m === 'moneda' || m === 'dado' || m === 'impostor') return m;
     }catch(e){}
     return 'ruleta';
   }
@@ -868,11 +1069,15 @@ var DEFAULT_RETOS = [
     try{ localStorage.setItem(MODE_KEY, m); }catch(e){}
   }
 
-  /* ---------- FIREBASE (retos compartidos) ---------- */
+  /* ---------- FIREBASE (retos y palabras compartidos) ---------- */
 
   var retosDocRef = null;
   var applyingRemoteRetos = false;
-  var syncTimer = null;
+  var retosSyncTimer = null;
+
+  var wordsDocRef = null;
+  var applyingRemoteWords = false;
+  var wordsSyncTimer = null;
 
   (function initFirebase(){
     try{
@@ -881,6 +1086,7 @@ var DEFAULT_RETOS = [
       firebase.initializeApp(FIREBASE_CONFIG);
       var db = firebase.firestore();
       retosDocRef = db.collection(RETOS_DOC_PATH.collection).doc(RETOS_DOC_PATH.doc);
+      wordsDocRef = db.collection(IMPOSTOR_DOC_PATH.collection).doc(IMPOSTOR_DOC_PATH.doc);
 
       retosDocRef.onSnapshot(function(snap){
         var data = snap.data();
@@ -895,17 +1101,39 @@ var DEFAULT_RETOS = [
       }, function(err){
         console.warn('No se pudo sincronizar retos con Firebase:', err);
       });
+
+      wordsDocRef.onSnapshot(function(snap){
+        var data = snap.data();
+        if(!data) return;
+        applyingRemoteWords = true;
+        if(Array.isArray(data.words) && data.words.length) impostorWords = data.words;
+        saveImpostorWords(true);
+        renderWordsEditor();
+        applyingRemoteWords = false;
+      }, function(err){
+        console.warn('No se pudo sincronizar las palabras del impostor con Firebase:', err);
+      });
     }catch(e){
-      console.warn('Firebase no disponible, los retos solo se guardan en este dispositivo.', e);
+      console.warn('Firebase no disponible, los datos solo se guardan en este dispositivo.', e);
     }
   })();
 
   function syncRetosToCloud(){
     if(!retosDocRef || applyingRemoteRetos) return;
-    clearTimeout(syncTimer);
-    syncTimer = setTimeout(function(){
+    clearTimeout(retosSyncTimer);
+    retosSyncTimer = setTimeout(function(){
       retosDocRef.set({ list: retos, enabled: retosEnabled }, { merge:true }).catch(function(err){
         console.warn('No se pudo guardar retos en Firebase:', err);
+      });
+    }, 400);
+  }
+
+  function syncImpostorWordsToCloud(){
+    if(!wordsDocRef || applyingRemoteWords) return;
+    clearTimeout(wordsSyncTimer);
+    wordsSyncTimer = setTimeout(function(){
+      wordsDocRef.set({ words: impostorWords }, { merge:true }).catch(function(err){
+        console.warn('No se pudieron guardar las palabras del impostor en Firebase:', err);
       });
     }, 400);
   }
@@ -971,6 +1199,7 @@ var DEFAULT_RETOS = [
         renderWheel();
         renderEditor();
         resetResult();
+        if(currentMode === 'impostor') resetImpostorToSetup();
       });
 
       row.appendChild(span);
@@ -989,6 +1218,7 @@ var DEFAULT_RETOS = [
     renderWheel();
     renderEditor();
     resetResult();
+    if(currentMode === 'impostor') resetImpostorToSetup();
   }
 
   /* ---------- RENDER: RETOS EDITOR ---------- */
@@ -1001,8 +1231,14 @@ var DEFAULT_RETOS = [
       var row = document.createElement('div');
       row.className = 'editor-row';
 
-      var span = document.createElement('span');
-      span.textContent = text;
+      var input = document.createElement('input');
+      input.className = 'editor-row-input';
+      input.value = text;
+      input.maxLength = 120;
+      input.addEventListener('input', function(){
+        retos[i] = input.value;
+        saveRetos();
+      });
 
       var removeBtn = document.createElement('button');
       removeBtn.className = 'row-remove';
@@ -1014,7 +1250,7 @@ var DEFAULT_RETOS = [
         renderRetosEditor();
       });
 
-      row.appendChild(span);
+      row.appendChild(input);
       row.appendChild(removeBtn);
       retosList.appendChild(row);
     });
@@ -1028,6 +1264,177 @@ var DEFAULT_RETOS = [
     saveRetos();
     newRetoInput.value = '';
     renderRetosEditor();
+  }
+
+  /* ---------- RENDER: PALABRAS DEL IMPOSTOR ---------- */
+
+  function renderWordsEditor(){
+    wordsList.innerHTML = '';
+    impostorWords.forEach(function(text, i){
+      var row = document.createElement('div');
+      row.className = 'editor-row';
+
+      var input = document.createElement('input');
+      input.className = 'editor-row-input';
+      input.value = text;
+      input.maxLength = 24;
+      input.addEventListener('input', function(){
+        impostorWords[i] = input.value;
+        saveImpostorWords();
+      });
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'row-remove';
+      removeBtn.setAttribute('aria-label', 'Quitar palabra');
+      removeBtn.textContent = '✕';
+      removeBtn.disabled = impostorWords.length <= 3;
+      removeBtn.addEventListener('click', function(){
+        impostorWords.splice(i, 1);
+        saveImpostorWords();
+        renderWordsEditor();
+      });
+
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      wordsList.appendChild(row);
+    });
+    addWordBtn.disabled = impostorWords.length >= MAX_WORDS;
+  }
+
+  function addWord(){
+    var text = newWordInput.value.trim();
+    if(!text || impostorWords.length >= MAX_WORDS) return;
+    impostorWords.push(text);
+    saveImpostorWords();
+    newWordInput.value = '';
+    renderWordsEditor();
+  }
+
+  /* ---------- IMPOSTOR ---------- */
+
+  function maxImpostorCount(){
+    return players.length >= 8 ? MAX_IMPOSTOR_COUNT : 1;
+  }
+
+  function renderImpostorCountUI(){
+    impostorCountValue.textContent = String(impostorCount);
+    impostorCountMinus.disabled = impostorCount <= 1;
+    impostorCountPlus.disabled = impostorCount >= maxImpostorCount();
+  }
+
+  function showImpostorPanel(which){
+    impostorSetup.hidden = which !== 'setup';
+    impostorReveal.hidden = which !== 'reveal';
+    impostorDiscuss.hidden = which !== 'discuss';
+    impostorSummary.hidden = which !== 'summary';
+  }
+
+  function resetImpostorToSetup(){
+    impostorPhase = 'setup';
+    impostorGame = null;
+    impostorCardFlipped = false;
+    impostorSetupHint.textContent = '';
+    impostorSetupHint.classList.remove('error');
+    if(impostorCount > maxImpostorCount()){
+      impostorCount = maxImpostorCount();
+      saveImpostorCount();
+    }
+    renderImpostorCountUI();
+    showImpostorPanel('setup');
+    actionLabel.textContent = 'Repartir roles';
+    hudStatus.textContent = 'Listo';
+    resultEl.textContent = IDLE_TEXT.impostor;
+    resultEl.classList.remove('show');
+  }
+
+  function startImpostorGame(){
+    if(players.length < MIN_IMPOSTOR_PLAYERS){
+      impostorSetupHint.textContent = 'Necesitas al menos ' + MIN_IMPOSTOR_PLAYERS + ' jugadores';
+      impostorSetupHint.classList.add('error');
+      return;
+    }
+    var count = Math.min(impostorCount, maxImpostorCount(), players.length - 2);
+    count = Math.max(1, count);
+
+    var pool = players.map(function(_, i){ return i; });
+    var impostorIdxs = [];
+    for(var k = 0; k < count; k++){
+      var pick = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      impostorIdxs.push(pick);
+    }
+    var impostorSet = {};
+    impostorIdxs.forEach(function(idx){ impostorSet[idx] = true; });
+
+    var wordsPool = impostorWords.length ? impostorWords : DEFAULT_IMPOSTOR_WORDS;
+
+    impostorGame = {
+      impostorSet: impostorSet,
+      word: pickRandom(wordsPool)
+    };
+    impostorTurnPos = 0;
+    impostorCardFlipped = false;
+    impostorPhase = 'reveal';
+    renderImpostorTurn();
+  }
+
+  function renderImpostorTurn(){
+    showImpostorPanel('reveal');
+    var name = players[impostorTurnPos];
+    impostorTurnName.textContent = name;
+    impostorCard.classList.remove('is-word', 'is-impostor');
+    impostorCardHint.hidden = false;
+    impostorCardText.textContent = '';
+    impostorCardFlipped = false;
+    actionLabel.textContent = 'Mostrar mi rol';
+    hudStatus.textContent = 'Turno de ' + name;
+    resultEl.textContent = 'Que nadie más mire la pantalla 👀';
+    resultEl.classList.add('show');
+  }
+
+  function revealImpostorCard(){
+    var isImpostor = !!impostorGame.impostorSet[impostorTurnPos];
+    impostorCardHint.hidden = true;
+    impostorCardText.textContent = isImpostor ? '🕵️ ERES EL IMPOSTOR' : impostorGame.word;
+    impostorCard.classList.add(isImpostor ? 'is-impostor' : 'is-word');
+    impostorCardFlipped = true;
+    var isLast = impostorTurnPos >= players.length - 1;
+    actionLabel.textContent = isLast ? 'Ocultar y empezar debate' : 'Ocultar y pasar';
+  }
+
+  function advanceImpostorTurn(){
+    if(impostorTurnPos >= players.length - 1){
+      impostorPhase = 'discuss';
+      showImpostorPanel('discuss');
+      actionLabel.textContent = 'Revelar impostor';
+      hudStatus.textContent = 'Debate';
+      resultEl.textContent = 'Debatid y descubrid quién miente 🕵️';
+      resultEl.classList.add('show');
+      return;
+    }
+    impostorTurnPos += 1;
+    renderImpostorTurn();
+  }
+
+  function revealImpostorSummary(){
+    impostorPhase = 'summary';
+    showImpostorPanel('summary');
+    var names = Object.keys(impostorGame.impostorSet).map(function(idx){ return players[idx]; }).join(', ');
+    impostorSummaryNames.textContent = names;
+    impostorSummaryWord.textContent = impostorGame.word;
+    actionLabel.textContent = 'Jugar otra ronda';
+    hudStatus.textContent = 'Revelado';
+    resultEl.textContent = '';
+    resultEl.classList.remove('show');
+  }
+
+  function handleImpostorAction(){
+    if(impostorPhase === 'setup') startImpostorGame();
+    else if(impostorPhase === 'reveal'){
+      if(!impostorCardFlipped) revealImpostorCard();
+      else advanceImpostorTurn();
+    }
+    else if(impostorPhase === 'discuss') revealImpostorSummary();
+    else if(impostorPhase === 'summary') startImpostorGame();
   }
 
   /* ---------- MODE SWITCHING ---------- */
@@ -1081,14 +1488,17 @@ var DEFAULT_RETOS = [
     hudStatus.textContent = HUD_STATUS_IDLE[mode];
 
     var isRuleta = mode === 'ruleta';
-    editToggle.hidden = !isRuleta;
+    var isImpostor = mode === 'impostor';
+    editToggle.hidden = !(isRuleta || isImpostor);
     editRetosToggle.hidden = !isRuleta;
-    if(!isRuleta){
-      editor.setAttribute('hidden', '');
-      retosEditor.setAttribute('hidden', '');
-    }
+    editWordsToggle.hidden = !isImpostor;
+    if(!(isRuleta || isImpostor)) editor.setAttribute('hidden', '');
+    if(!isRuleta) retosEditor.setAttribute('hidden', '');
+    if(!isImpostor) wordsEditor.setAttribute('hidden', '');
 
     resetResult();
+
+    if(isImpostor) resetImpostorToSetup();
   }
 
   modeTabs.forEach(function(tab){
@@ -1675,6 +2085,7 @@ var DEFAULT_RETOS = [
   }
 
   function handleAction(){
+    if(currentMode === 'impostor'){ handleImpostorAction(); return; }
     if(!beginSpin()) return;
     if(currentMode === 'ruleta') spinWheel();
     else if(currentMode === 'moneda') spinCoin();
@@ -1689,6 +2100,8 @@ var DEFAULT_RETOS = [
     var isHidden = editor.hasAttribute('hidden');
     retosEditor.setAttribute('hidden', '');
     editRetosToggle.textContent = 'Editar retos';
+    wordsEditor.setAttribute('hidden', '');
+    editWordsToggle.textContent = 'Editar palabras';
     if(isHidden){
       editor.removeAttribute('hidden');
       renderEditor();
@@ -1728,6 +2141,40 @@ var DEFAULT_RETOS = [
     if(e.key === 'Enter'){ e.preventDefault(); addReto(); }
   });
 
+  editWordsToggle.addEventListener('click', function(){
+    var isHidden = wordsEditor.hasAttribute('hidden');
+    editor.setAttribute('hidden', '');
+    editToggle.textContent = 'Editar jugadores';
+    if(isHidden){
+      wordsEditor.removeAttribute('hidden');
+      renderWordsEditor();
+      editWordsToggle.textContent = 'Ocultar palabras';
+    } else {
+      wordsEditor.setAttribute('hidden', '');
+      editWordsToggle.textContent = 'Editar palabras';
+    }
+  });
+
+  addWordBtn.addEventListener('click', addWord);
+  newWordInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); addWord(); }
+  });
+
+  impostorCountMinus.addEventListener('click', function(){
+    if(impostorCount > 1){
+      impostorCount -= 1;
+      saveImpostorCount();
+      renderImpostorCountUI();
+    }
+  });
+  impostorCountPlus.addEventListener('click', function(){
+    if(impostorCount < maxImpostorCount()){
+      impostorCount += 1;
+      saveImpostorCount();
+      renderImpostorCountUI();
+    }
+  });
+
   /* ---------- INIT ---------- */
 
   renderWheel();
@@ -1744,8 +2191,9 @@ var DEFAULT_RETOS = [
   actionLabel.textContent = ACTION_LABEL[currentMode];
   actionIcon.innerHTML = ACTION_ICON[currentMode];
   hudStatus.textContent = HUD_STATUS_IDLE[currentMode];
-  editToggle.hidden = currentMode !== 'ruleta';
+  editToggle.hidden = currentMode !== 'ruleta' && currentMode !== 'impostor';
   editRetosToggle.hidden = currentMode !== 'ruleta';
+  editWordsToggle.hidden = currentMode !== 'impostor';
   requestAnimationFrame(moveIndicator);
   if(currentMode === 'moneda'){
     requestAnimationFrame(function(){ CoinGame.init(); CoinGame.resize(); });
@@ -1753,6 +2201,7 @@ var DEFAULT_RETOS = [
     requestAnimationFrame(function(){ DiceGame.init(); DiceGame.resize(); });
   }
   resetResult();
+  if(currentMode === 'impostor') resetImpostorToSetup();
 })();
 </script>
 </body>
