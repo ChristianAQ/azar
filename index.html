@@ -70,6 +70,7 @@
     max-width:440px;
     box-sizing:border-box;
     padding:0 20px;
+    margin-top:18px;
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -107,7 +108,7 @@
     .stage-shell{ width:min(72vw,300px); }
   }
 
-  .header{ text-align:center; }
+  .header{ position:relative; width:100%; text-align:center; }
 
   .eyebrow{
     margin:0 0 8px;
@@ -502,8 +503,9 @@
 
   .edit-menu-wrap{
     position:absolute;
-    top:0;
-    right:0;
+    top:50%;
+    right:10px;
+    transform:translateY(-50%);
     z-index:35;
   }
 
@@ -553,6 +555,28 @@
     opacity:1;
     pointer-events:auto;
   }
+
+  .edit-menu-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 8px 8px;
+  }
+  .edit-menu-heading{
+    font-family:'Unbounded',sans-serif;
+    font-weight:800; font-size:12.5px;
+    letter-spacing:.04em;
+    color:var(--dim);
+  }
+  .edit-menu-dismiss{
+    appearance:none; border:none;
+    background:rgba(244,239,227,0.08);
+    width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--dim);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .edit-menu-dismiss svg{ width:13px; height:13px; }
+  .edit-menu-dismiss:hover{ background:rgba(255,61,148,0.15); color:var(--coral); }
 
   .edit-menu-item{
     appearance:none; border:none; background:transparent;
@@ -616,13 +640,8 @@
 
   .editor{
     width:100%;
-    background:var(--panel);
-    border:1px solid rgba(255,204,77,0.2);
-    border-radius:18px;
-    padding:16px;
     display:flex; flex-direction:column; gap:10px;
   }
-  .editor[hidden]{ display:none; }
 
   .editor-list{ display:flex; flex-direction:column; gap:8px; }
 
@@ -665,7 +684,7 @@
   .editor-add-word button{ flex:1 1 100%; padding:12px 16px; }
 
   .editor-add input{
-    flex:1; min-height:44px;
+    flex:1; min-width:0; min-height:44px;
     background:rgba(10,8,19,0.6);
     border:1px solid rgba(244,239,227,0.18);
     border-radius:10px;
@@ -687,6 +706,65 @@
   }
 
   .editor-hint{ font-size:11px; color:var(--dim); margin:2px 2px 0; }
+
+  /* ---------- EDITOR MODALS ---------- */
+
+  .modal-overlay{
+    position:fixed; inset:0;
+    z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(10,8,19,0.82);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    opacity:0;
+    transition:opacity .25s ease;
+    padding:20px;
+  }
+  .modal-overlay[hidden]{ display:none; }
+  .modal-overlay.show{ opacity:1; }
+
+  .modal-card{
+    position:relative;
+    width:100%; max-width:400px;
+    max-height:min(600px, 82vh);
+    display:flex; flex-direction:column;
+    background:radial-gradient(circle at 50% 0%, var(--panel-2), var(--panel) 75%);
+    border:1.5px solid rgba(255,204,77,0.5);
+    border-radius:24px;
+    box-shadow:0 25px 70px rgba(0,0,0,0.55), 0 0 40px var(--accent-dim);
+    transform:scale(.9) translateY(10px);
+    opacity:0;
+    transition:transform .32s cubic-bezier(.2,.9,.3,1.3), opacity .25s ease;
+  }
+  .modal-overlay.show .modal-card{ transform:scale(1) translateY(0); opacity:1; }
+
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px;
+    padding:20px 18px 12px 22px;
+    flex:none;
+  }
+  .modal-title{
+    margin:0;
+    font-family:'Unbounded',sans-serif;
+    font-weight:800; font-size:16.5px;
+  }
+  .modal-close{
+    appearance:none; border:none;
+    background:rgba(244,239,227,0.08);
+    width:32px; height:32px; border-radius:50%; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--bone);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .modal-close svg{ width:15px; height:15px; }
+  .modal-close:hover{ background:rgba(255,61,148,0.15); color:var(--coral); }
+
+  .modal-body{
+    padding:0 18px 20px 22px;
+    overflow-y:auto;
+  }
 
   :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
 
@@ -802,6 +880,52 @@
   <div class="header">
     <p class="eyebrow"><img class="eyebrow-logo" src="data:image/png;base64,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" alt="" width="64" height="64"> Juegos de fiesta</p>
     <h1 class="title">Ruleta del <span>Azar</span></h1>
+
+    <div class="edit-menu-wrap" id="editMenuWrap">
+      <button class="menu-trigger" id="editMenuTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Editar jugadores, retos o palabras">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="6" x2="20" y2="6"/><circle cx="14" cy="6" r="2" fill="currentColor" stroke="none"/>
+          <line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="12" r="2" fill="currentColor" stroke="none"/>
+          <line x1="4" y1="18" x2="20" y2="18"/><circle cx="16" cy="18" r="2" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+
+      <div class="edit-menu" id="editMenu" role="menu" aria-label="Editar">
+        <div class="edit-menu-head">
+          <span class="edit-menu-heading">Editar</span>
+          <button class="edit-menu-dismiss" id="editMenuClose" type="button" aria-label="Cerrar menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+
+        <button class="edit-menu-item" id="editToggle" type="button" role="menuitem">
+          <span class="edit-menu-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2"/></svg>
+          </span>
+          <span class="edit-menu-item-label">Editar jugadores</span>
+          <svg class="edit-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+
+        <div class="edit-menu-item" id="editRetosToggle" role="menuitem" tabindex="0">
+          <span class="edit-menu-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4 0 6.5-2.6 6.5-6.2 0-2.8-1.7-4.4-2.8-6.4-.4 1.9-1.7 2.6-1.7 2.6.6-3-1.7-5.3-2.9-7C10 7.5 6.5 9 6.5 13.3 6.5 17.9 8 21 12 21Z"/></svg>
+          </span>
+          <span class="edit-menu-item-label">Editar retos</span>
+          <label class="switch" title="Habilitar retos">
+            <input type="checkbox" id="retosEnabledToggleMenu" aria-label="Habilitar retos">
+            <span class="switch-track"></span>
+          </label>
+        </div>
+
+        <button class="edit-menu-item" id="editWordsToggle" type="button" role="menuitem">
+          <span class="edit-menu-item-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10.5H8.5L4 19.5V5.5Z"/><line x1="7.3" y1="9.3" x2="16.7" y2="9.3"/><line x1="7.3" y1="12.6" x2="13.5" y2="12.6"/></svg>
+          </span>
+          <span class="edit-menu-item-label">Editar palabras</span>
+          <svg class="edit-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
   </div>
 
   <div class="mode-dock" role="tablist" aria-label="Modo de juego" id="modeDock">
@@ -822,45 +946,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.2" y1="15.2" x2="20.5" y2="20.5"/></svg>
       <span>Impostor</span>
     </button>
-  </div>
-
-  <div class="edit-menu-wrap" id="editMenuWrap">
-    <button class="menu-trigger" id="editMenuTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Editar jugadores, retos o palabras">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="4" y1="6" x2="20" y2="6"/><circle cx="14" cy="6" r="2" fill="currentColor" stroke="none"/>
-        <line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="12" r="2" fill="currentColor" stroke="none"/>
-        <line x1="4" y1="18" x2="20" y2="18"/><circle cx="16" cy="18" r="2" fill="currentColor" stroke="none"/>
-      </svg>
-    </button>
-
-    <div class="edit-menu" id="editMenu" role="menu" aria-label="Editar">
-      <button class="edit-menu-item" id="editToggle" type="button" role="menuitem">
-        <span class="edit-menu-item-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2"/></svg>
-        </span>
-        <span class="edit-menu-item-label">Editar jugadores</span>
-        <svg class="edit-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </button>
-
-      <div class="edit-menu-item" id="editRetosToggle" role="menuitem" tabindex="0">
-        <span class="edit-menu-item-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4 0 6.5-2.6 6.5-6.2 0-2.8-1.7-4.4-2.8-6.4-.4 1.9-1.7 2.6-1.7 2.6.6-3-1.7-5.3-2.9-7C10 7.5 6.5 9 6.5 13.3 6.5 17.9 8 21 12 21Z"/></svg>
-        </span>
-        <span class="edit-menu-item-label">Editar retos</span>
-        <label class="switch" title="Habilitar retos">
-          <input type="checkbox" id="retosEnabledToggleMenu" aria-label="Habilitar retos">
-          <span class="switch-track"></span>
-        </label>
-      </div>
-
-      <button class="edit-menu-item" id="editWordsToggle" type="button" role="menuitem">
-        <span class="edit-menu-item-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10.5H8.5L4 19.5V5.5Z"/><line x1="7.3" y1="9.3" x2="16.7" y2="9.3"/><line x1="7.3" y1="12.6" x2="13.5" y2="12.6"/></svg>
-        </span>
-        <span class="edit-menu-item-label">Editar palabras</span>
-        <svg class="edit-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </button>
-    </div>
   </div>
   </div>
   </div>
@@ -955,41 +1040,77 @@
 
   <p class="result" id="result" aria-live="polite"></p>
 
-  <div class="editor" id="editor" hidden>
-    <div class="editor-list" id="editorList"></div>
-    <div class="editor-add">
-      <input id="newPlayerInput" placeholder="Nombre" maxlength="14">
-      <button id="addPlayerBtn">Añadir</button>
-    </div>
-    <p class="editor-hint">Entre 2 y 10 jugadores. Se guardan en este dispositivo.</p>
-  </div>
+</div>
 
-  <div class="editor" id="retosEditor" hidden>
-    <label class="switch-row">
-      <span>Habilitar retos</span>
-      <span class="switch">
-        <input type="checkbox" id="retosEnabledToggle">
-        <span class="switch-track"></span>
-      </span>
-    </label>
-    <div class="editor-list" id="retosList"></div>
-    <div class="editor-add">
-      <input id="newRetoInput" placeholder="Nuevo reto" maxlength="120">
-      <button id="addRetoBtn">Añadir</button>
+<div class="modal-overlay" id="editorOverlay" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 class="modal-title">Editar jugadores</h2>
+      <button class="modal-close" id="editorClose" type="button" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
     </div>
-    <p class="editor-hint">Si está desactivado, la ruleta no muestra retos al ganar. Los retos se sincronizan entre dispositivos.</p>
-  </div>
-
-  <div class="editor" id="wordsEditor" hidden>
-    <div class="editor-list" id="wordsList"></div>
-    <div class="editor-add editor-add-word">
-      <input id="newWordInput" placeholder="Nueva palabra" maxlength="24">
-      <input id="newWordHintInput" placeholder="Pista para el impostor (opcional)" maxlength="40">
-      <button id="addWordBtn">Añadir</button>
+    <div class="modal-body">
+      <div class="editor" id="editor">
+        <div class="editor-list" id="editorList"></div>
+        <div class="editor-add">
+          <input id="newPlayerInput" placeholder="Nombre" maxlength="14">
+          <button id="addPlayerBtn">Añadir</button>
+        </div>
+        <p class="editor-hint">Entre 2 y 10 jugadores. Se guardan en este dispositivo.</p>
+      </div>
     </div>
-    <p class="editor-hint">Se elige una palabra al azar en cada ronda. El impostor no ve la palabra, ve la pista. Se sincronizan entre dispositivos.</p>
   </div>
+</div>
 
+<div class="modal-overlay" id="retosEditorOverlay" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 class="modal-title">Editar retos</h2>
+      <button class="modal-close" id="retosEditorClose" type="button" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="editor" id="retosEditor">
+        <label class="switch-row">
+          <span>Habilitar retos</span>
+          <span class="switch">
+            <input type="checkbox" id="retosEnabledToggle">
+            <span class="switch-track"></span>
+          </span>
+        </label>
+        <div class="editor-list" id="retosList"></div>
+        <div class="editor-add">
+          <input id="newRetoInput" placeholder="Nuevo reto" maxlength="120">
+          <button id="addRetoBtn">Añadir</button>
+        </div>
+        <p class="editor-hint">Si está desactivado, la ruleta no muestra retos al ganar. Los retos se sincronizan entre dispositivos.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="wordsEditorOverlay" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 class="modal-title">Editar palabras</h2>
+      <button class="modal-close" id="wordsEditorClose" type="button" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="editor" id="wordsEditor">
+        <div class="editor-list" id="wordsList"></div>
+        <div class="editor-add editor-add-word">
+          <input id="newWordInput" placeholder="Nueva palabra" maxlength="24">
+          <input id="newWordHintInput" placeholder="Pista para el impostor (opcional)" maxlength="40">
+          <button id="addWordBtn">Añadir</button>
+        </div>
+        <p class="editor-hint">Se elige una palabra al azar en cada ronda. El impostor no ve la palabra, ve la pista. Se sincronizan entre dispositivos.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="celebrate" id="celebrate" hidden aria-live="assertive">
@@ -1213,13 +1334,18 @@ var DEFAULT_RETOS = [
   var editMenuWrap = document.getElementById('editMenuWrap');
   var editMenuTrigger = document.getElementById('editMenuTrigger');
   var editMenu = document.getElementById('editMenu');
+  var editMenuClose = document.getElementById('editMenuClose');
   var editToggle = document.getElementById('editToggle');
+  var editorOverlay = document.getElementById('editorOverlay');
+  var editorClose = document.getElementById('editorClose');
   var editor = document.getElementById('editor');
   var editorList = document.getElementById('editorList');
   var newPlayerInput = document.getElementById('newPlayerInput');
   var addPlayerBtn = document.getElementById('addPlayerBtn');
 
   var editRetosToggle = document.getElementById('editRetosToggle');
+  var retosEditorOverlay = document.getElementById('retosEditorOverlay');
+  var retosEditorClose = document.getElementById('retosEditorClose');
   var retosEditor = document.getElementById('retosEditor');
   var retosList = document.getElementById('retosList');
   var newRetoInput = document.getElementById('newRetoInput');
@@ -1228,6 +1354,8 @@ var DEFAULT_RETOS = [
   var retosEnabledToggleMenu = document.getElementById('retosEnabledToggleMenu');
 
   var editWordsToggle = document.getElementById('editWordsToggle');
+  var wordsEditorOverlay = document.getElementById('wordsEditorOverlay');
+  var wordsEditorClose = document.getElementById('wordsEditorClose');
   var wordsEditor = document.getElementById('wordsEditor');
   var wordsList = document.getElementById('wordsList');
   var newWordInput = document.getElementById('newWordInput');
@@ -1835,9 +1963,9 @@ var DEFAULT_RETOS = [
     editToggle.hidden = !(isRuleta || isImpostor);
     editRetosToggle.hidden = !isRuleta;
     editWordsToggle.hidden = !isImpostor;
-    if(!(isRuleta || isImpostor)) closeEditorPanel(editor, editToggle);
-    if(!isRuleta) closeEditorPanel(retosEditor, editRetosToggle);
-    if(!isImpostor) closeEditorPanel(wordsEditor, editWordsToggle);
+    if(!(isRuleta || isImpostor)) closeEditorPanel(editorOverlay, editToggle);
+    if(!isRuleta) closeEditorPanel(retosEditorOverlay, editRetosToggle);
+    if(!isImpostor) closeEditorPanel(wordsEditorOverlay, editWordsToggle);
     closeEditMenu();
 
     resetResult();
@@ -2605,21 +2733,33 @@ var DEFAULT_RETOS = [
 
   actionBtn.addEventListener('click', handleAction);
 
-  function closeEditorPanel(panel, itemEl){
-    panel.setAttribute('hidden', '');
+  function closeEditorPanel(overlay, itemEl){
+    if(overlay.hasAttribute('hidden')) return;
+    overlay.classList.remove('show');
     if(itemEl) itemEl.classList.remove('active');
+    setTimeout(function(){ overlay.setAttribute('hidden', ''); }, 250);
     updateMenuTriggerState();
   }
 
-  function scrollPanelIntoView(panel){
-    requestAnimationFrame(function(){
-      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
+  function openEditorPanel(overlay, itemEl){
+    overlay.removeAttribute('hidden');
+    requestAnimationFrame(function(){ overlay.classList.add('show'); });
+    if(itemEl) itemEl.classList.add('active');
+    updateMenuTriggerState();
+  }
+
+  function anyEditorOpen(){
+    return !editorOverlay.hasAttribute('hidden') || !retosEditorOverlay.hasAttribute('hidden') || !wordsEditorOverlay.hasAttribute('hidden');
+  }
+
+  function closeAllEditorPanels(){
+    closeEditorPanel(editorOverlay, editToggle);
+    closeEditorPanel(retosEditorOverlay, editRetosToggle);
+    closeEditorPanel(wordsEditorOverlay, editWordsToggle);
   }
 
   function updateMenuTriggerState(){
-    var anyOpen = !editor.hasAttribute('hidden') || !retosEditor.hasAttribute('hidden') || !wordsEditor.hasAttribute('hidden');
-    editMenuTrigger.classList.toggle('active', anyOpen);
+    editMenuTrigger.classList.toggle('active', anyEditorOpen());
   }
 
   function openEditMenu(){
@@ -2636,29 +2776,36 @@ var DEFAULT_RETOS = [
     if(editMenu.classList.contains('show')) closeEditMenu();
     else openEditMenu();
   });
+  editMenuClose.addEventListener('click', closeEditMenu);
   document.addEventListener('click', function(e){
     if(!editMenu.classList.contains('show')) return;
     if(editMenu.contains(e.target) || editMenuTrigger.contains(e.target)) return;
     closeEditMenu();
   });
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape') closeEditMenu();
+    if(e.key !== 'Escape') return;
+    closeEditMenu();
+    closeAllEditorPanels();
   });
 
-  editToggle.addEventListener('click', function(){
-    var isHidden = editor.hasAttribute('hidden');
-    closeEditorPanel(retosEditor, editRetosToggle);
-    closeEditorPanel(wordsEditor, editWordsToggle);
+  function toggleEditorPanel(overlay, itemEl, otherOverlays, render){
+    var isHidden = overlay.hasAttribute('hidden');
+    otherOverlays.forEach(function(pair){ closeEditorPanel(pair[0], pair[1]); });
     if(isHidden){
-      editor.removeAttribute('hidden');
-      renderEditor();
-      editToggle.classList.add('active');
-      scrollPanelIntoView(editor);
+      render();
+      openEditorPanel(overlay, itemEl);
     } else {
-      closeEditorPanel(editor, editToggle);
+      closeEditorPanel(overlay, itemEl);
     }
-    updateMenuTriggerState();
     closeEditMenu();
+  }
+
+  editToggle.addEventListener('click', function(){
+    toggleEditorPanel(editorOverlay, editToggle, [[retosEditorOverlay, editRetosToggle], [wordsEditorOverlay, editWordsToggle]], renderEditor);
+  });
+  editorClose.addEventListener('click', function(){ closeEditorPanel(editorOverlay, editToggle); });
+  editorOverlay.addEventListener('click', function(e){
+    if(e.target === editorOverlay) closeEditorPanel(editorOverlay, editToggle);
   });
 
   addPlayerBtn.addEventListener('click', addPlayer);
@@ -2668,18 +2815,11 @@ var DEFAULT_RETOS = [
 
   editRetosToggle.addEventListener('click', function(e){
     if(e.target.closest('.switch')) return;
-    var isHidden = retosEditor.hasAttribute('hidden');
-    closeEditorPanel(editor, editToggle);
-    if(isHidden){
-      retosEditor.removeAttribute('hidden');
-      renderRetosEditor();
-      editRetosToggle.classList.add('active');
-      scrollPanelIntoView(retosEditor);
-    } else {
-      closeEditorPanel(retosEditor, editRetosToggle);
-    }
-    updateMenuTriggerState();
-    closeEditMenu();
+    toggleEditorPanel(retosEditorOverlay, editRetosToggle, [[editorOverlay, editToggle], [wordsEditorOverlay, editWordsToggle]], renderRetosEditor);
+  });
+  retosEditorClose.addEventListener('click', function(){ closeEditorPanel(retosEditorOverlay, editRetosToggle); });
+  retosEditorOverlay.addEventListener('click', function(e){
+    if(e.target === retosEditorOverlay) closeEditorPanel(retosEditorOverlay, editRetosToggle);
   });
 
   function setRetosEnabled(value){
@@ -2697,18 +2837,11 @@ var DEFAULT_RETOS = [
   });
 
   editWordsToggle.addEventListener('click', function(){
-    var isHidden = wordsEditor.hasAttribute('hidden');
-    closeEditorPanel(editor, editToggle);
-    if(isHidden){
-      wordsEditor.removeAttribute('hidden');
-      renderWordsEditor();
-      editWordsToggle.classList.add('active');
-      scrollPanelIntoView(wordsEditor);
-    } else {
-      closeEditorPanel(wordsEditor, editWordsToggle);
-    }
-    updateMenuTriggerState();
-    closeEditMenu();
+    toggleEditorPanel(wordsEditorOverlay, editWordsToggle, [[editorOverlay, editToggle], [retosEditorOverlay, editRetosToggle]], renderWordsEditor);
+  });
+  wordsEditorClose.addEventListener('click', function(){ closeEditorPanel(wordsEditorOverlay, editWordsToggle); });
+  wordsEditorOverlay.addEventListener('click', function(e){
+    if(e.target === wordsEditorOverlay) closeEditorPanel(wordsEditorOverlay, editWordsToggle);
   });
 
   addWordBtn.addEventListener('click', addWord);
