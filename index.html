@@ -55,6 +55,7 @@
     font-family:'Manrope',sans-serif;
     display:flex;
     justify-content:center;
+    align-items:center;
     padding: max(24px, env(safe-area-inset-top)) 20px max(28px, env(safe-area-inset-bottom));
     transition: background .5s ease;
   }
@@ -189,6 +190,7 @@
     width:min(84vw,360px);
     aspect-ratio:1/1;
     margin-top:2px;
+    touch-action:pan-y;
   }
 
   .stage-shell::before{
@@ -237,6 +239,9 @@
   }
   @keyframes pulse{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
 
+  .stage-track{ position:absolute; inset:0; }
+  .stage-track.is-dragging{ overflow:hidden; }
+
   .stage-panel{ position:absolute; inset:0; }
   .stage-panel[hidden]{ display:none; }
 
@@ -253,8 +258,12 @@
       0 0 30px var(--accent-dim),
       inset 0 0 40px rgba(0,0,0,0.45),
       0 20px 50px rgba(0,0,0,0.55);
-    transition:box-shadow .5s ease;
+    transition:box-shadow .5s ease, transform .15s ease;
   }
+
+  .stage-panel.is-tappable{ cursor:pointer; }
+  .stage-panel.is-tappable:active .wheel,
+  .stage-panel.is-tappable:active .three-wrap{ transform:scale(.97); }
 
   .slot{
     position:absolute; top:50%; left:50%;
@@ -331,6 +340,7 @@
   .three-wrap{
     position:absolute; inset:0;
     display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease;
   }
   .three-wrap canvas{
     width:100% !important;
@@ -723,7 +733,8 @@
     <p class="hud-status" id="hudStatus">Listo</p>
     <i class="corner corner-tl"></i><i class="corner corner-tr"></i><i class="corner corner-bl"></i><i class="corner corner-br"></i>
 
-    <div class="stage-panel" id="stage-ruleta">
+    <div class="stage-track" id="stageTrack">
+    <div class="stage-panel is-tappable" id="stage-ruleta">
       <div class="wheel" id="wheel"></div>
       <div class="hub">
         <div class="hub-plate"></div>
@@ -745,14 +756,14 @@
       </div>
     </div>
 
-    <div class="stage-panel" id="stage-moneda" hidden>
+    <div class="stage-panel is-tappable" id="stage-moneda" hidden>
       <div class="three-wrap">
         <div class="coin-rim"></div>
         <canvas id="coinCanvas"></canvas>
       </div>
     </div>
 
-    <div class="stage-panel" id="stage-dado" hidden>
+    <div class="stage-panel is-tappable" id="stage-dado" hidden>
       <div class="three-wrap">
         <canvas id="diceCanvas"></canvas>
       </div>
@@ -796,6 +807,7 @@
         <p class="impostor-turn-name" id="impostorSummaryNames">—</p>
         <p class="impostor-hint">Palabra secreta: <strong id="impostorSummaryWord">—</strong></p>
       </div>
+    </div>
     </div>
   </div>
 
@@ -1047,6 +1059,9 @@ var DEFAULT_RETOS = [
   var modeDock = document.getElementById('modeDock');
   var modeIndicator = document.getElementById('modeIndicator');
   var modeTabs = Array.prototype.slice.call(document.querySelectorAll('.mode-tab'));
+
+  var stageShell = document.getElementById('stageShell');
+  var stageTrack = document.getElementById('stageTrack');
 
   var stagePanels = {
     ruleta: document.getElementById('stage-ruleta'),
@@ -1656,8 +1671,16 @@ var DEFAULT_RETOS = [
     moveIndicator();
 
     Object.keys(stagePanels).forEach(function(key){
-      if(key === mode) stagePanels[key].removeAttribute('hidden');
-      else stagePanels[key].setAttribute('hidden', '');
+      var panel = stagePanels[key];
+      if(key === mode){
+        panel.removeAttribute('hidden');
+        panel.style.transition = 'none';
+        panel.style.transform = '';
+      } else {
+        panel.setAttribute('hidden', '');
+        panel.style.transition = '';
+        panel.style.transform = '';
+      }
     });
 
     if(mode === 'moneda'){
@@ -1692,6 +1715,171 @@ var DEFAULT_RETOS = [
     CoinGame.resize();
     DiceGame.resize();
   });
+
+  /* ---------- STAGE GESTURES: tap object to play + swipe between modes ---------- */
+
+  var MODE_ORDER = ['ruleta', 'moneda', 'dado', 'impostor'];
+  var SWIPE_TAP_SLOP = 8;        // px of movement still considered a tap
+  var SWIPE_COMMIT_RATIO = 0.22; // fraction of stage width that commits a swipe
+  var SWIPE_COMMIT_SPEED = 0.5;  // px/ms flick speed that also commits
+  var SWIPE_RUBBER = 0.3;        // resistance factor past the first/last mode
+
+  var gesture = null;
+  var stageTransitioning = false;
+
+  function preparePanel(mode){
+    var panel = stagePanels[mode];
+    if(!panel) return null;
+    panel.removeAttribute('hidden');
+    try {
+      if(mode === 'moneda'){ CoinGame.init(); CoinGame.resize(); }
+      else if(mode === 'dado'){ DiceGame.init(); DiceGame.resize(); }
+    } catch(err){ /* the panel can still slide into view even if the 3D scene failed to init */ }
+    return panel;
+  }
+
+  function resetPanelStyle(panel){
+    if(!panel) return;
+    panel.style.transition = '';
+    panel.style.transform = '';
+  }
+
+  function releaseNeighbor(g){
+    if(g.neighborPanel){
+      resetPanelStyle(g.neighborPanel);
+      g.neighborPanel.setAttribute('hidden', '');
+    }
+    g.neighborMode = null;
+    g.neighborPanel = null;
+    g.dir = 0;
+  }
+
+  function resolveNeighbor(g, dir){
+    if(g.dir === dir) return;
+    releaseNeighbor(g);
+    g.dir = dir;
+    var neighborIndex = g.index + dir;
+    if(neighborIndex < 0 || neighborIndex >= MODE_ORDER.length) return;
+    g.neighborMode = MODE_ORDER[neighborIndex];
+    g.neighborPanel = preparePanel(g.neighborMode);
+    if(g.neighborPanel){
+      g.neighborBase = dir * g.width;
+      g.neighborPanel.style.transition = 'none';
+      g.neighborPanel.style.transform = 'translateX(' + g.neighborBase + 'px)';
+    }
+  }
+
+  function settleTo(panel, x, cleanup){
+    if(!panel) { if(cleanup) cleanup(); return; }
+    var done = false;
+    function finish(){
+      if(done) return;
+      done = true;
+      panel.removeEventListener('transitionend', onEnd);
+      if(cleanup) cleanup();
+    }
+    function onEnd(e){ if(e.target === panel && e.propertyName === 'transform') finish(); }
+    panel.addEventListener('transitionend', onEnd);
+    panel.style.transition = 'transform .32s cubic-bezier(.22,.61,.36,1)';
+    // force reflow so the transition applies before we change the target value
+    void panel.offsetWidth;
+    panel.style.transform = 'translateX(' + x + 'px)';
+    setTimeout(finish, 380);
+  }
+
+  stageShell.addEventListener('pointerdown', function(e){
+    if(e.button !== undefined && e.button !== 0) return;
+    if(gesture || stageTransitioning) return;
+    gesture = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      dx: 0,
+      dir: 0,
+      dragging: false,
+      locked: spinning,
+      captured: false,
+      index: MODE_ORDER.indexOf(currentMode),
+      width: stageShell.clientWidth || 1,
+      neighborMode: null,
+      neighborPanel: null,
+      startTime: Date.now()
+    };
+  });
+
+  stageShell.addEventListener('pointermove', function(e){
+    var g = gesture;
+    if(!g || e.pointerId !== g.pointerId || g.locked) return;
+    var dx = e.clientX - g.startX;
+    var dy = e.clientY - g.startY;
+
+    if(!g.dragging){
+      if(Math.abs(dx) < SWIPE_TAP_SLOP || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      g.dragging = true;
+      try { stageShell.setPointerCapture(g.pointerId); g.captured = true; } catch(err){}
+      stageTrack.classList.add('is-dragging');
+      var current = stagePanels[currentMode];
+      current.style.transition = 'none';
+    }
+
+    e.preventDefault();
+    resolveNeighbor(g, dx < 0 ? 1 : -1);
+
+    var visualDx = g.neighborPanel ? dx : dx * SWIPE_RUBBER;
+    g.dx = visualDx;
+    stagePanels[currentMode].style.transform = 'translateX(' + visualDx + 'px)';
+    if(g.neighborPanel){
+      g.neighborPanel.style.transform = 'translateX(' + (g.neighborBase + visualDx) + 'px)';
+    }
+  });
+
+  function endGesture(e){
+    var g = gesture;
+    if(!g || e.pointerId !== g.pointerId) return;
+    gesture = null;
+    if(g.captured){ try { stageShell.releasePointerCapture(g.pointerId); } catch(err){} }
+
+    if(!g.dragging){
+      if(!g.locked && currentMode !== 'impostor') handleAction();
+      return;
+    }
+
+    var elapsed = Math.max(1, Date.now() - g.startTime);
+    var speed = g.dx / elapsed;
+    var commit = !!g.neighborMode &&
+      (Math.abs(g.dx) > g.width * SWIPE_COMMIT_RATIO || Math.abs(speed) > SWIPE_COMMIT_SPEED);
+
+    var current = stagePanels[currentMode];
+    var neighbor = g.neighborPanel;
+    var neighborMode = g.neighborMode;
+    var pending = commit ? 2 : (neighbor ? 2 : 1);
+
+    stageTransitioning = true;
+
+    function afterSettle(){
+      pending -= 1;
+      if(pending > 0) return;
+      stageTrack.classList.remove('is-dragging');
+      stageTransitioning = false;
+      if(commit){
+        switchMode(neighborMode);
+      } else {
+        resetPanelStyle(current);
+        if(neighbor){ resetPanelStyle(neighbor); neighbor.setAttribute('hidden', ''); }
+      }
+    }
+
+    if(commit){
+      settleTo(current, -g.dir * g.width, afterSettle);
+      settleTo(neighbor, 0, afterSettle);
+    } else {
+      settleTo(current, 0, afterSettle);
+      if(neighbor) settleTo(neighbor, g.neighborBase, afterSettle);
+    }
+  }
+
+  stageShell.addEventListener('pointerup', endGesture);
+  stageShell.addEventListener('pointercancel', endGesture);
 
   /* ---------- RESULT TEXT ---------- */
 
