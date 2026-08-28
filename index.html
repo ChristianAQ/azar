@@ -44,13 +44,7 @@
     margin:0;
     min-height:100vh;
     min-height:100dvh;
-    background:
-      radial-gradient(55% 38% at 12% -4%, rgba(180,85,255,0.24), transparent 62%),
-      radial-gradient(50% 36% at 88% 0%, rgba(61,255,160,0.18), transparent 60%),
-      radial-gradient(70% 55% at 50% 108%, rgba(255,61,148,0.22), transparent 60%),
-      radial-gradient(38% 28% at 50% 30%, rgba(255,204,77,0.06), transparent 65%),
-      var(--ink);
-    background-attachment:local;
+    background:var(--ink);
     color:var(--bone);
     font-family:'Manrope',sans-serif;
     display:flex;
@@ -58,6 +52,21 @@
     align-items:center;
     justify-content:center;
     padding: 0 0 max(56px, calc(env(safe-area-inset-bottom) + 32px));
+    position:relative;
+    isolation:isolate;
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    background:
+      radial-gradient(55% 38% at 12% -4%, rgba(180,85,255,0.24), transparent 62%),
+      radial-gradient(50% 36% at 88% 0%, rgba(61,255,160,0.18), transparent 60%),
+      radial-gradient(70% 55% at 50% 108%, rgba(255,61,148,0.22), transparent 60%),
+      radial-gradient(38% 28% at 50% 30%, rgba(255,204,77,0.06), transparent 65%),
+      var(--ink);
     transition: background .5s ease;
   }
 
@@ -85,7 +94,9 @@
     width:100%;
     display:flex;
     justify-content:center;
-    background:var(--ink);
+    background:rgba(10,8,19,0.55);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
     padding-top:max(28px, calc(env(safe-area-inset-top) + 14px));
     padding-bottom:16px;
   }
@@ -489,7 +500,7 @@
 
   .edit-menu-backdrop{
     position:fixed; inset:0;
-    z-index:32;
+    z-index:20;
     background:rgba(7,4,15,0.6);
     opacity:0;
     pointer-events:none;
