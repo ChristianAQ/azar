@@ -89,6 +89,7 @@
   }
 
   .top-bar-inner{
+    position:relative;
     width:100%;
     max-width:440px;
     box-sizing:border-box;
@@ -497,22 +498,91 @@
   }
   .result.show{ color:var(--coral); }
 
-  .edit-toggle{
-    appearance:none;
-    background:transparent;
-    border:1px solid var(--line-strong);
-    color:var(--dim);
-    font-family:'Manrope',sans-serif;
-    font-weight:700; font-size:13px;
-    padding:12px 18px;
-    min-height:44px;
-    border-radius:999px;
-    cursor:pointer;
-    transition:color .2s ease, border-color .2s ease;
-  }
-  .edit-toggle.active{ color:var(--accent); border-color:var(--accent); background:var(--accent-dim); box-shadow:0 0 14px var(--accent-dim); }
+  /* ---------- EDIT MENU ---------- */
 
-  .editor-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; width:100%; min-height:44px; }
+  .edit-menu-wrap{
+    position:absolute;
+    top:0;
+    right:0;
+    z-index:35;
+  }
+
+  .menu-trigger{
+    appearance:none;
+    width:38px; height:38px;
+    border-radius:50%;
+    border:1px solid var(--line-strong);
+    background:rgba(244,239,227,0.06);
+    color:var(--dim);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:color .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .15s ease;
+  }
+  .menu-trigger svg{ width:18px; height:18px; }
+  .menu-trigger:hover{ border-color:var(--accent); color:var(--accent); }
+  .menu-trigger:active{ transform:scale(0.92); }
+  .menu-trigger.active{
+    color:var(--accent);
+    border-color:var(--accent);
+    background:var(--accent-dim);
+    box-shadow:0 0 14px var(--accent-dim);
+  }
+  .menu-trigger[hidden]{ display:none; }
+
+  .edit-menu{
+    position:absolute;
+    top:calc(100% + 10px);
+    right:0;
+    width:250px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    background:var(--panel-2);
+    border:1.5px solid rgba(255,204,77,0.35);
+    border-radius:18px;
+    padding:7px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.55), 0 0 30px var(--accent-dim);
+    transform-origin:top right;
+    transform:scale(.92) translateY(-6px);
+    opacity:0;
+    pointer-events:none;
+    transition:transform .22s cubic-bezier(.2,.9,.3,1.3), opacity .18s ease;
+  }
+  .edit-menu.show{
+    transform:scale(1) translateY(0);
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .edit-menu-item{
+    appearance:none; border:none; background:transparent;
+    width:100%;
+    display:flex; align-items:center; gap:10px;
+    padding:10px;
+    border-radius:12px;
+    cursor:pointer;
+    color:var(--bone);
+    font-family:'Manrope',sans-serif;
+    text-align:left;
+    transition:background .15s ease, color .15s ease;
+  }
+  .edit-menu-item[hidden]{ display:none; }
+  .edit-menu-item:hover{ background:rgba(244,239,227,0.07); }
+  .edit-menu-item.active{ color:var(--accent); }
+  .edit-menu-item.active .edit-menu-item-icon{ color:var(--accent); }
+
+  .edit-menu-item-icon{
+    width:20px; height:20px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--dim);
+  }
+  .edit-menu-item-icon svg{ width:18px; height:18px; }
+
+  .edit-menu-item-label{ flex:1; font-weight:700; font-size:13.5px; }
+
+  .edit-menu-chevron{ width:15px; height:15px; flex:none; color:var(--dim); opacity:.55; }
+
+  .edit-menu-item .switch{ flex:none; }
 
   .switch-row{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -754,10 +824,43 @@
     </button>
   </div>
 
-  <div class="editor-actions">
-    <button class="edit-toggle" id="editToggle">Editar jugadores</button>
-    <button class="edit-toggle" id="editRetosToggle">Editar retos</button>
-    <button class="edit-toggle" id="editWordsToggle">Editar palabras</button>
+  <div class="edit-menu-wrap" id="editMenuWrap">
+    <button class="menu-trigger" id="editMenuTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Editar jugadores, retos o palabras">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="6" x2="20" y2="6"/><circle cx="14" cy="6" r="2" fill="currentColor" stroke="none"/>
+        <line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="12" r="2" fill="currentColor" stroke="none"/>
+        <line x1="4" y1="18" x2="20" y2="18"/><circle cx="16" cy="18" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
+
+    <div class="edit-menu" id="editMenu" role="menu" aria-label="Editar">
+      <button class="edit-menu-item" id="editToggle" type="button" role="menuitem">
+        <span class="edit-menu-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2"/></svg>
+        </span>
+        <span class="edit-menu-item-label">Editar jugadores</span>
+        <svg class="edit-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+
+      <div class="edit-menu-item" id="editRetosToggle" role="menuitem" tabindex="0">
+        <span class="edit-menu-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4 0 6.5-2.6 6.5-6.2 0-2.8-1.7-4.4-2.8-6.4-.4 1.9-1.7 2.6-1.7 2.6.6-3-1.7-5.3-2.9-7C10 7.5 6.5 9 6.5 13.3 6.5 17.9 8 21 12 21Z"/></svg>
+        </span>
+        <span class="edit-menu-item-label">Editar retos</span>
+        <label class="switch" title="Habilitar retos">
+          <input type="checkbox" id="retosEnabledToggleMenu" aria-label="Habilitar retos">
+          <span class="switch-track"></span>
+        </label>
+      </div>
+
+      <button class="edit-menu-item" id="editWordsToggle" type="button" role="menuitem">
+        <span class="edit-menu-item-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v10.5H8.5L4 19.5V5.5Z"/><line x1="7.3" y1="9.3" x2="16.7" y2="9.3"/><line x1="7.3" y1="12.6" x2="13.5" y2="12.6"/></svg>
+        </span>
+        <span class="edit-menu-item-label">Editar palabras</span>
+        <svg class="edit-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
   </div>
   </div>
   </div>
@@ -1107,6 +1210,9 @@ var DEFAULT_RETOS = [
   var actionLabel = document.getElementById('actionLabel');
 
   var resultEl = document.getElementById('result');
+  var editMenuWrap = document.getElementById('editMenuWrap');
+  var editMenuTrigger = document.getElementById('editMenuTrigger');
+  var editMenu = document.getElementById('editMenu');
   var editToggle = document.getElementById('editToggle');
   var editor = document.getElementById('editor');
   var editorList = document.getElementById('editorList');
@@ -1119,6 +1225,7 @@ var DEFAULT_RETOS = [
   var newRetoInput = document.getElementById('newRetoInput');
   var addRetoBtn = document.getElementById('addRetoBtn');
   var retosEnabledToggle = document.getElementById('retosEnabledToggle');
+  var retosEnabledToggleMenu = document.getElementById('retosEnabledToggleMenu');
 
   var editWordsToggle = document.getElementById('editWordsToggle');
   var wordsEditor = document.getElementById('wordsEditor');
@@ -1415,6 +1522,7 @@ var DEFAULT_RETOS = [
 
   function renderRetosEditor(){
     retosEnabledToggle.checked = retosEnabled;
+    retosEnabledToggleMenu.checked = retosEnabled;
 
     retosList.innerHTML = '';
     retos.forEach(function(text, i){
@@ -1723,12 +1831,14 @@ var DEFAULT_RETOS = [
 
     var isRuleta = mode === 'ruleta';
     var isImpostor = mode === 'impostor';
+    editMenuWrap.hidden = !(isRuleta || isImpostor);
     editToggle.hidden = !(isRuleta || isImpostor);
     editRetosToggle.hidden = !isRuleta;
     editWordsToggle.hidden = !isImpostor;
-    if(!(isRuleta || isImpostor)) closeEditorPanel(editor, editToggle, 'Editar jugadores');
-    if(!isRuleta) closeEditorPanel(retosEditor, editRetosToggle, 'Editar retos');
-    if(!isImpostor) closeEditorPanel(wordsEditor, editWordsToggle, 'Editar palabras');
+    if(!(isRuleta || isImpostor)) closeEditorPanel(editor, editToggle);
+    if(!isRuleta) closeEditorPanel(retosEditor, editRetosToggle);
+    if(!isImpostor) closeEditorPanel(wordsEditor, editWordsToggle);
+    closeEditMenu();
 
     resetResult();
 
@@ -2495,10 +2605,10 @@ var DEFAULT_RETOS = [
 
   actionBtn.addEventListener('click', handleAction);
 
-  function closeEditorPanel(panel, toggleBtn, closedLabel){
+  function closeEditorPanel(panel, itemEl){
     panel.setAttribute('hidden', '');
-    toggleBtn.textContent = closedLabel;
-    toggleBtn.classList.remove('active');
+    if(itemEl) itemEl.classList.remove('active');
+    updateMenuTriggerState();
   }
 
   function scrollPanelIntoView(panel){
@@ -2507,19 +2617,48 @@ var DEFAULT_RETOS = [
     });
   }
 
+  function updateMenuTriggerState(){
+    var anyOpen = !editor.hasAttribute('hidden') || !retosEditor.hasAttribute('hidden') || !wordsEditor.hasAttribute('hidden');
+    editMenuTrigger.classList.toggle('active', anyOpen);
+  }
+
+  function openEditMenu(){
+    editMenu.classList.add('show');
+    editMenuTrigger.setAttribute('aria-expanded', 'true');
+  }
+  function closeEditMenu(){
+    editMenu.classList.remove('show');
+    editMenuTrigger.setAttribute('aria-expanded', 'false');
+  }
+
+  editMenuTrigger.addEventListener('click', function(e){
+    e.stopPropagation();
+    if(editMenu.classList.contains('show')) closeEditMenu();
+    else openEditMenu();
+  });
+  document.addEventListener('click', function(e){
+    if(!editMenu.classList.contains('show')) return;
+    if(editMenu.contains(e.target) || editMenuTrigger.contains(e.target)) return;
+    closeEditMenu();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeEditMenu();
+  });
+
   editToggle.addEventListener('click', function(){
     var isHidden = editor.hasAttribute('hidden');
-    closeEditorPanel(retosEditor, editRetosToggle, 'Editar retos');
-    closeEditorPanel(wordsEditor, editWordsToggle, 'Editar palabras');
+    closeEditorPanel(retosEditor, editRetosToggle);
+    closeEditorPanel(wordsEditor, editWordsToggle);
     if(isHidden){
       editor.removeAttribute('hidden');
       renderEditor();
-      editToggle.textContent = 'Ocultar edición';
       editToggle.classList.add('active');
       scrollPanelIntoView(editor);
     } else {
-      closeEditorPanel(editor, editToggle, 'Editar jugadores');
+      closeEditorPanel(editor, editToggle);
     }
+    updateMenuTriggerState();
+    closeEditMenu();
   });
 
   addPlayerBtn.addEventListener('click', addPlayer);
@@ -2527,24 +2666,30 @@ var DEFAULT_RETOS = [
     if(e.key === 'Enter'){ e.preventDefault(); addPlayer(); }
   });
 
-  editRetosToggle.addEventListener('click', function(){
+  editRetosToggle.addEventListener('click', function(e){
+    if(e.target.closest('.switch')) return;
     var isHidden = retosEditor.hasAttribute('hidden');
-    closeEditorPanel(editor, editToggle, 'Editar jugadores');
+    closeEditorPanel(editor, editToggle);
     if(isHidden){
       retosEditor.removeAttribute('hidden');
       renderRetosEditor();
-      editRetosToggle.textContent = 'Ocultar retos';
       editRetosToggle.classList.add('active');
       scrollPanelIntoView(retosEditor);
     } else {
-      closeEditorPanel(retosEditor, editRetosToggle, 'Editar retos');
+      closeEditorPanel(retosEditor, editRetosToggle);
     }
+    updateMenuTriggerState();
+    closeEditMenu();
   });
 
-  retosEnabledToggle.addEventListener('change', function(){
-    retosEnabled = retosEnabledToggle.checked;
+  function setRetosEnabled(value){
+    retosEnabled = value;
+    retosEnabledToggle.checked = value;
+    retosEnabledToggleMenu.checked = value;
     saveRetosEnabled();
-  });
+  }
+  retosEnabledToggle.addEventListener('change', function(){ setRetosEnabled(retosEnabledToggle.checked); });
+  retosEnabledToggleMenu.addEventListener('change', function(){ setRetosEnabled(retosEnabledToggleMenu.checked); });
 
   addRetoBtn.addEventListener('click', addReto);
   newRetoInput.addEventListener('keydown', function(e){
@@ -2553,16 +2698,17 @@ var DEFAULT_RETOS = [
 
   editWordsToggle.addEventListener('click', function(){
     var isHidden = wordsEditor.hasAttribute('hidden');
-    closeEditorPanel(editor, editToggle, 'Editar jugadores');
+    closeEditorPanel(editor, editToggle);
     if(isHidden){
       wordsEditor.removeAttribute('hidden');
       renderWordsEditor();
-      editWordsToggle.textContent = 'Ocultar palabras';
       editWordsToggle.classList.add('active');
       scrollPanelIntoView(wordsEditor);
     } else {
-      closeEditorPanel(wordsEditor, editWordsToggle, 'Editar palabras');
+      closeEditorPanel(wordsEditor, editWordsToggle);
     }
+    updateMenuTriggerState();
+    closeEditMenu();
   });
 
   addWordBtn.addEventListener('click', addWord);
@@ -2604,6 +2750,7 @@ var DEFAULT_RETOS = [
   actionLabel.textContent = ACTION_LABEL[currentMode];
   actionIcon.innerHTML = ACTION_ICON[currentMode];
   hudStatus.textContent = HUD_STATUS_IDLE[currentMode];
+  editMenuWrap.hidden = currentMode !== 'ruleta' && currentMode !== 'impostor';
   editToggle.hidden = currentMode !== 'ruleta' && currentMode !== 'impostor';
   editRetosToggle.hidden = currentMode !== 'ruleta';
   editWordsToggle.hidden = currentMode !== 'impostor';
