@@ -120,14 +120,7 @@
     .stage-shell{ width:min(72vw,300px); }
   }
 
-  .header{
-    position:relative;
-    width:100%;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:10px;
-  }
+  .header{ position:relative; width:100%; text-align:center; }
 
   .title{
     margin:0;
@@ -151,6 +144,16 @@
       0 0 14px var(--accent),
       0 0 32px var(--accent-dim);
     transition:color .4s ease, text-shadow .4s ease;
+  }
+
+  .tagline{
+    margin:6px 0 0;
+    font-family:'Manrope',sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--dim);
   }
 
   @keyframes neonFlicker{
@@ -520,8 +523,10 @@
   }
 
   .edit-menu-wrap{
-    position:relative;
-    align-self:flex-end;
+    position:absolute;
+    top:50%;
+    right:10px;
+    transform:translateY(-50%);
     z-index:35;
   }
 
@@ -897,6 +902,7 @@
   <div class="header">
 
     <h1 class="title">Juegos de <span>Fiesta</span></h1>
+    <p class="tagline">Chupito</p>
 
     <div class="edit-menu-wrap" id="editMenuWrap">
       <button class="menu-trigger" id="editMenuTrigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Editar jugadores, retos o palabras">
