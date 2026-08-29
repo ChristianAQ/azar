@@ -2094,6 +2094,7 @@
 
       var wheelRotation = 0;
       var lastWinner = -1;
+      var roundWinners = new Set(); // names already picked in the current "everyone gets a turn" round
 
       var lastCoin = '';
       var lastDice = -1;
@@ -2266,6 +2267,22 @@
 
       function angleFor(i, n) { return (360 / n) * i; }
       function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+      // Mostly-equal odds, with a slight nudge toward players who haven't won this
+      // round yet — subtle enough to not feel rigged, but it keeps the pain spread
+      // out instead of the same couple of people getting picked over and over.
+      var ROUND_BOOST = 1.5;
+      function pickWeightedPlayerIndex() {
+        var n = players.length;
+        var weights = players.map(function (name) { return roundWinners.has(name) ? 1 : ROUND_BOOST; });
+        var total = weights.reduce(function (a, b) { return a + b; }, 0);
+        var r = Math.random() * total;
+        for (var i = 0; i < n; i++) {
+          r -= weights[i];
+          if (r <= 0) return i;
+        }
+        return n - 1;
+      }
       function vibrate(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { } }
       function prefersReducedMotion() { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
@@ -2320,6 +2337,7 @@
           removeBtn.addEventListener('click', function () {
             players.splice(i, 1);
             savePlayers();
+            roundWinners.clear();
             renderWheel();
             renderEditor();
             resetResult();
@@ -2338,6 +2356,7 @@
         if (!name || players.length >= MAX_PLAYERS) return;
         players.push(name);
         savePlayers();
+        roundWinners.clear();
         newPlayerInput.value = '';
         renderWheel();
         renderEditor();
@@ -2914,7 +2933,7 @@
 
       function spinWheel() {
         var n = players.length;
-        var targetIndex = Math.floor(Math.random() * n);
+        var targetIndex = pickWeightedPlayerIndex();
         if (n > 2 && targetIndex === lastWinner) {
           targetIndex = (targetIndex + 1) % n;
         }
@@ -2946,6 +2965,8 @@
           if (slot) slot.classList.add('winner');
 
           var name = players[targetIndex];
+          roundWinners.add(name);
+          if (roundWinners.size >= players.length) roundWinners.clear(); // everyone's had a turn, start a fresh round
           resultEl.textContent = name;
           resultEl.classList.add('show');
 
