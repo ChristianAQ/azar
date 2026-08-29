@@ -28,7 +28,7 @@
 
       --neon: #3dffa0;
       --neon-dim: rgba(61, 255, 160, 0.18);
-      --violet: #00ff22;
+      --violet: #b455ff;
       --violet-dim: rgba(180, 85, 255, 0.2);
       --gold: #ffcc4d;
       --gold-dim: rgba(255, 204, 77, 0.2);
@@ -2610,12 +2610,14 @@
       }
 
       function setAccentOverride(colors) {
-        body.style.setProperty('--accent', colors.accent);
-        body.style.setProperty('--accent-dim', colors.dim);
+        // scoped to the celebration overlay only, so the result color (green/violet)
+        // tints just that card instead of recoloring the whole app's UI (button, tabs, HUD).
+        celebrateEl.style.setProperty('--accent', colors.accent);
+        celebrateEl.style.setProperty('--accent-dim', colors.dim);
       }
       function clearAccentOverride() {
-        body.style.removeProperty('--accent');
-        body.style.removeProperty('--accent-dim');
+        celebrateEl.style.removeProperty('--accent');
+        celebrateEl.style.removeProperty('--accent-dim');
       }
 
       function switchMode(mode) {
@@ -3024,11 +3026,19 @@
             ctx.fill();
           }
 
+          // CylinderGeometry's cap UV mapping runs its U axis along what ends up as the
+          // vertical screen axis once the coin is tilted to face the camera, so text drawn
+          // "horizontally" here would render sideways along the coin's left edge. Rotating
+          // it -90° before drawing makes it read left-to-right at the bottom of the coin.
+          ctx.save();
+          ctx.translate(size * 0.79, size / 2);
+          ctx.rotate(-Math.PI / 2);
           ctx.fillStyle = 'rgba(244,239,227,0.85)';
           ctx.font = '700 ' + Math.round(size * 0.085) + 'px Unbounded, sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(kind === 'cara' ? 'CARA' : 'CRUZ', size / 2, size * 0.79);
+          ctx.fillText(kind === 'cara' ? 'CARA' : 'CRUZ', 0, 0);
+          ctx.restore();
 
           return new THREE.CanvasTexture(c);
         }
