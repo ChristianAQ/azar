@@ -34,6 +34,8 @@
       --gold-dim: rgba(255, 204, 77, 0.2);
       --coral: #ff1f44;
       --coral-dim: rgba(255, 61, 148, 0.2);
+      --ice: #29d3ff;
+      --ice-dim: rgba(41, 211, 255, 0.2);
 
       --bone: #f6f1ff;
       --dim: #a79bc9;
@@ -104,6 +106,11 @@
       --accent-dim: rgba(255, 61, 148, 0.18);
     }
 
+    body.mode-dedo {
+      --accent: var(--ice);
+      --accent-dim: var(--ice-dim);
+    }
+
     .app {
       width: 100%;
       max-width: 440px;
@@ -114,6 +121,112 @@
       flex-direction: column;
       align-items: center;
       gap: 20px;
+    }
+
+    .app[hidden] {
+      display: none;
+    }
+
+    /* ---------- FINGER GAME (full-screen multitouch) ---------- */
+
+    .finger-stage {
+      align-self: stretch;
+      flex: 1 1 auto;
+      min-height: 320px;
+      margin-top: 68px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .finger-stage[hidden] {
+      display: none;
+    }
+
+    .finger-hint {
+      margin: 0;
+      max-width: 260px;
+      text-align: center;
+      font-family: 'Manrope', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--dim);
+      pointer-events: none;
+      transition: color .3s ease, text-shadow .3s ease;
+    }
+
+    .finger-hint.is-active {
+      color: var(--accent);
+      text-shadow: 0 0 14px var(--accent-dim);
+    }
+
+    .finger-dot {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 64px;
+      height: 64px;
+      margin: -32px 0 0 -32px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: radial-gradient(circle, var(--accent-dim), rgba(27, 20, 48, 0.4) 70%);
+      box-shadow: 0 0 18px var(--accent-dim), 0 0 0 1px rgba(0, 0, 0, 0.2) inset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--bone);
+      pointer-events: none;
+      transform: scale(1);
+      transition: opacity .35s ease, transform .35s ease, filter .35s ease, box-shadow .35s ease;
+      animation: fingerLand .28s cubic-bezier(.2, .9, .3, 1.3);
+    }
+
+    @keyframes fingerLand {
+      from {
+        transform: scale(0.4);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .finger-dot.is-out {
+      opacity: .22;
+      transform: scale(.72);
+      filter: grayscale(.7);
+      border-color: var(--line-strong);
+      box-shadow: none;
+    }
+
+    .finger-dot.is-winner {
+      z-index: 2;
+      box-shadow: 0 0 30px var(--accent), 0 0 60px var(--accent-dim);
+      animation: fingerWinner 1s ease-in-out infinite;
+    }
+
+    @keyframes fingerWinner {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.16);
+      }
     }
 
     .top-bar {
@@ -282,6 +395,17 @@
       width: 15px;
       height: 15px;
       flex-shrink: 0;
+    }
+
+    .mode-tab span {
+      display: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mode-tab.active span {
+      display: inline;
     }
 
     .mode-tab.active {
@@ -1636,7 +1760,7 @@
 
     <div class="mode-dock" role="tablist" aria-label="Modo de juego" id="modeDock">
       <div class="mode-indicator" id="modeIndicator"></div>
-      <button class="mode-tab active" data-mode="ruleta" role="tab" aria-selected="true">
+      <button class="mode-tab active" data-mode="ruleta" role="tab" aria-selected="true" aria-label="Ruleta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round">
           <path d="M6 4h12l-1.6 14.2A2 2 0 0 1 14.4 20H9.6a2 2 0 0 1-2-1.8L6 4Z" />
@@ -1644,7 +1768,7 @@
         </svg>
         <span>Ruleta</span>
       </button>
-      <button class="mode-tab" data-mode="moneda" role="tab" aria-selected="false">
+      <button class="mode-tab" data-mode="moneda" role="tab" aria-selected="false" aria-label="Moneda">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round">
           <circle cx="12" cy="12" r="8" />
@@ -1652,7 +1776,7 @@
         </svg>
         <span>Moneda</span>
       </button>
-      <button class="mode-tab" data-mode="dado" role="tab" aria-selected="false">
+      <button class="mode-tab" data-mode="dado" role="tab" aria-selected="false" aria-label="Dado">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round">
           <rect x="4" y="4" width="16" height="16" rx="4" />
@@ -1664,7 +1788,7 @@
         </svg>
         <span>Dado</span>
       </button>
-      <button class="mode-tab" data-mode="impostor" role="tab" aria-selected="false">
+      <button class="mode-tab" data-mode="impostor" role="tab" aria-selected="false" aria-label="Impostor">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round">
           <circle cx="10.5" cy="10.5" r="6.5" />
@@ -1672,10 +1796,19 @@
         </svg>
         <span>Impostor</span>
       </button>
+      <button class="mode-tab" data-mode="dedo" role="tab" aria-selected="false" aria-label="Dedo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="12" cy="14" r="2.3" fill="currentColor" stroke="none" />
+          <path d="M7.3 14a4.7 4.7 0 0 1 9.4 0" />
+          <path d="M4 14a8 8 0 0 1 16 0" />
+        </svg>
+        <span>Dedo</span>
+      </button>
     </div>
   </div>
 
-  <div class="app">
+  <div class="app" id="app">
 
     <div class="stage-shell" id="stageShell">
       <p class="hud-status" id="hudStatus">Listo</p>
@@ -1768,6 +1901,10 @@
 
     <p class="result" id="result" aria-live="polite"></p>
 
+  </div>
+
+  <div class="finger-stage" id="fingerStage" hidden>
+    <p class="finger-hint" id="fingerHint">Todos ponen un dedo en la pantalla</p>
   </div>
 
   <div class="modal-overlay" id="editorOverlay" hidden>
@@ -1925,6 +2062,12 @@
       var DICE_TUMBLE_MS = 750;
       var DICE_SETTLE_MS = 550;
 
+      var FINGER_MIN = 2;
+      var FINGER_HOLD_MS = 1500;
+      var FINGER_STEP_START_MS = 260;
+      var FINGER_STEP_END_MS = 90;
+      var FINGER_REVEAL_PAUSE_MS = 300;
+
       var CONFETTI_COUNT = 26;
       var CONFETTI_COLORS = ['#3dffa0', '#ff3d94', '#ffcc4d', '#b455ff'];
 
@@ -1932,7 +2075,8 @@
         ruleta: 'Toca girar y que decida la suerte',
         moneda: 'Lanza la moneda y que decida el destino',
         dado: 'Tira el dado y acepta tu suerte',
-        impostor: 'Reparte los roles y descubre quién miente'
+        impostor: 'Reparte los roles y descubre quién miente',
+        dedo: 'Todos ponen un dedo en la pantalla'
       };
       var IDLE_EASTER_EGGS_RULETA = [
         'Si tienes miedo, este es tu momento para decirlo…',
@@ -1940,15 +2084,16 @@
         ''
       ];
 
-      var ACTION_LABEL = { ruleta: 'Girar', moneda: 'Girar', dado: 'Girar', impostor: 'Repartir roles' };
+      var ACTION_LABEL = { ruleta: 'Girar', moneda: 'Girar', dado: 'Girar', impostor: 'Repartir roles', dedo: 'Poner el dedo' };
       var ACTION_ICON = {
         ruleta: '',
         moneda: '',
         dado: '',
-        impostor: '<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.2" y1="15.2" x2="20.5" y2="20.5"/>'
+        impostor: '<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.2" y1="15.2" x2="20.5" y2="20.5"/>',
+        dedo: ''
       };
-      var HUD_STATUS_IDLE = { ruleta: 'Listo', moneda: 'Listo', dado: 'Listo', impostor: 'Listo' };
-      var HUD_STATUS_BUSY = { ruleta: 'Girando…', moneda: 'En el aire…', dado: 'Rodando…', impostor: 'En juego…' };
+      var HUD_STATUS_IDLE = { ruleta: 'Listo', moneda: 'Listo', dado: 'Listo', impostor: 'Listo', dedo: 'Listo' };
+      var HUD_STATUS_BUSY = { ruleta: 'Girando…', moneda: 'En el aire…', dado: 'Rodando…', impostor: 'En juego…', dedo: 'Sorteando…' };
 
       var DEFAULT_RETOS = [
         'RETO: Chupito o tres flexiones 🔥',
@@ -2085,6 +2230,9 @@
       var actionLabel = document.getElementById('actionLabel');
 
       var resultEl = document.getElementById('result');
+      var appEl = document.getElementById('app');
+      var fingerStage = document.getElementById('fingerStage');
+      var fingerHint = document.getElementById('fingerHint');
       var editMenuBackdrop = document.getElementById('editMenuBackdrop');
       var editMenuWrap = document.getElementById('editMenuWrap');
       var editMenuTrigger = document.getElementById('editMenuTrigger');
@@ -2156,6 +2304,12 @@
 
       var lastCoin = '';
       var lastDice = -1;
+
+      var fingerTouches = new Map(); // identifier -> { el, order, lifted }
+      var fingerOrderCounter = 0;
+      var fingerPhase = 'idle'; // 'idle' | 'holding' | 'revealing' | 'done'
+      var fingerHoldTimer = null;
+      var fingerRevealTimers = [];
 
       var retos = loadRetos();
       var retosEnabled = loadRetosEnabled();
@@ -2244,7 +2398,7 @@
       function loadMode() {
         try {
           var m = localStorage.getItem(MODE_KEY);
-          if (m === 'ruleta' || m === 'moneda' || m === 'dado' || m === 'impostor') return m;
+          if (m === 'ruleta' || m === 'moneda' || m === 'dado' || m === 'impostor' || m === 'dedo') return m;
         } catch (e) { }
         return 'ruleta';
       }
@@ -2325,6 +2479,13 @@
 
       function angleFor(i, n) { return (360 / n) * i; }
       function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function shuffleArray(arr) {
+        for (var i = arr.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+        }
+        return arr;
+      }
 
       // Mostly-equal odds, with a slight nudge toward players who haven't won this
       // round yet — subtle enough to not feel rigged, but it keeps the pain spread
@@ -2699,6 +2860,7 @@
 
       function switchMode(mode) {
         if (mode === currentMode) return;
+        if (currentMode === 'dedo') resetFingerRound(); // leaving mid-round orphans the touches
         currentMode = mode;
         saveMode(mode);
 
@@ -2724,6 +2886,11 @@
             panel.style.transform = '';
           }
         });
+
+        var isDedo = mode === 'dedo';
+        appEl.hidden = isDedo;
+        fingerStage.hidden = !isDedo;
+        if (isDedo) updateFingerHint();
 
         if (mode === 'moneda') {
           requestAnimationFrame(function () { CoinGame.init(); CoinGame.resize(); });
@@ -3535,6 +3702,175 @@
         else if (currentMode === 'dado') rollDice();
       }
 
+      /* ---------- FINGER GAME: EL DEDO ---------- */
+      // Everyone lays a finger on the screen; once there are enough and they've
+      // stayed down for a moment, dots go dark one at a time until only one
+      // (the chosen finger) is left lit.
+
+      function fingerStagePoint(touch) {
+        var rect = fingerStage.getBoundingClientRect();
+        return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+      }
+
+      function addFingerDot(touch) {
+        fingerOrderCounter++;
+        var el = document.createElement('div');
+        el.className = 'finger-dot';
+        el.textContent = String(fingerOrderCounter);
+        var p = fingerStagePoint(touch);
+        el.style.left = p.x + 'px';
+        el.style.top = p.y + 'px';
+        fingerStage.appendChild(el);
+        fingerTouches.set(touch.identifier, { el: el, order: fingerOrderCounter, lifted: false });
+      }
+
+      function moveFingerDot(touch) {
+        var info = fingerTouches.get(touch.identifier);
+        if (!info) return;
+        var p = fingerStagePoint(touch);
+        info.el.style.left = p.x + 'px';
+        info.el.style.top = p.y + 'px';
+      }
+
+      function removeFingerDot(identifier) {
+        var info = fingerTouches.get(identifier);
+        if (!info) return;
+        if (info.el.parentNode) info.el.parentNode.removeChild(info.el);
+        fingerTouches.delete(identifier);
+      }
+
+      function cancelFingerHold() {
+        if (fingerHoldTimer) { clearTimeout(fingerHoldTimer); fingerHoldTimer = null; }
+      }
+
+      function clearFingerRevealTimers() {
+        fingerRevealTimers.forEach(function (id) { clearTimeout(id); });
+        fingerRevealTimers.length = 0;
+      }
+
+      function updateFingerHint() {
+        var n = fingerTouches.size;
+        var active = fingerPhase === 'holding' || fingerPhase === 'revealing' || fingerPhase === 'done';
+        fingerHint.classList.toggle('is-active', active);
+        if (fingerPhase === 'revealing') {
+          fingerHint.textContent = 'Sorteando…';
+        } else if (fingerPhase === 'done') {
+          fingerHint.textContent = n > 0 ? 'Levanten los dedos para jugar otra vez' : '¡Elegido!';
+        } else if (fingerPhase === 'holding') {
+          fingerHint.textContent = '¡Quietos…!';
+        } else if (n === 0) {
+          fingerHint.textContent = IDLE_TEXT.dedo;
+        } else if (n < FINGER_MIN) {
+          var falta = FINGER_MIN - n;
+          fingerHint.textContent = falta === 1 ? 'Falta 1 dedo más' : ('Faltan ' + falta + ' dedos más');
+        } else {
+          fingerHint.textContent = '¡Quietos…!';
+        }
+      }
+
+      function evaluateFingerState() {
+        if (fingerPhase !== 'idle') return;
+        if (fingerTouches.size >= FINGER_MIN) {
+          fingerPhase = 'holding';
+          fingerHoldTimer = setTimeout(startFingerReveal, FINGER_HOLD_MS);
+        }
+        updateFingerHint();
+      }
+
+      function eliminateFingerDot(info) {
+        info.el.classList.add('is-out');
+        vibrate(12);
+      }
+
+      function crownFingerWinner(info) {
+        fingerPhase = 'done';
+        info.el.classList.add('is-winner');
+        updateFingerHint();
+        vibrate([30, 60, 30]);
+        openCelebration({ eyebrow: 'El dedo elegido es', name: '#' + info.order, caption: '' });
+        checkAllFingersLifted();
+      }
+
+      function startFingerReveal() {
+        fingerPhase = 'revealing';
+        fingerHoldTimer = null;
+        updateFingerHint();
+        vibrate(20);
+
+        var entries = Array.from(fingerTouches.values());
+        var n = entries.length;
+        var reduceMotion = prefersReducedMotion();
+        var winnerIdx = Math.floor(Math.random() * n);
+        var winner = entries[winnerIdx];
+        var others = shuffleArray(entries.filter(function (_, i) { return i !== winnerIdx; }));
+
+        var delay = reduceMotion ? 40 : FINGER_REVEAL_PAUSE_MS;
+        others.forEach(function (info, idx) {
+          fingerRevealTimers.push(setTimeout(function () { eliminateFingerDot(info); }, delay));
+          if (reduceMotion) {
+            delay += 40;
+          } else {
+            var frac = others.length > 1 ? idx / (others.length - 1) : 1;
+            delay += FINGER_STEP_START_MS - (FINGER_STEP_START_MS - FINGER_STEP_END_MS) * frac;
+          }
+        });
+        delay += reduceMotion ? 60 : 320;
+        fingerRevealTimers.push(setTimeout(function () { crownFingerWinner(winner); }, delay));
+      }
+
+      function checkAllFingersLifted() {
+        if (fingerPhase !== 'done') return;
+        var allLifted = true;
+        fingerTouches.forEach(function (info) { if (!info.lifted) allLifted = false; });
+        if (allLifted) resetFingerRound();
+      }
+
+      function resetFingerRound() {
+        fingerPhase = 'idle';
+        cancelFingerHold();
+        clearFingerRevealTimers();
+        fingerTouches.forEach(function (info) { if (info.el.parentNode) info.el.parentNode.removeChild(info.el); });
+        fingerTouches.clear();
+        fingerOrderCounter = 0;
+        updateFingerHint();
+      }
+
+      fingerStage.addEventListener('touchstart', function (e) {
+        e.preventDefault();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var t = e.changedTouches[i];
+          if (fingerPhase === 'revealing' || fingerPhase === 'done') continue; // round already committed
+          if (fingerTouches.has(t.identifier)) continue;
+          addFingerDot(t);
+        }
+        evaluateFingerState();
+      }, { passive: false });
+
+      fingerStage.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+        for (var i = 0; i < e.changedTouches.length; i++) moveFingerDot(e.changedTouches[i]);
+      }, { passive: false });
+
+      function onFingerTouchEnd(e) {
+        e.preventDefault();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var t = e.changedTouches[i];
+          var info = fingerTouches.get(t.identifier);
+          if (!info) continue;
+          if (fingerPhase === 'idle' || fingerPhase === 'holding') {
+            cancelFingerHold();
+            removeFingerDot(t.identifier);
+            fingerPhase = 'idle';
+            updateFingerHint();
+          } else {
+            info.lifted = true;
+            checkAllFingersLifted();
+          }
+        }
+      }
+      fingerStage.addEventListener('touchend', onFingerTouchEnd, { passive: false });
+      fingerStage.addEventListener('touchcancel', onFingerTouchEnd, { passive: false });
+
       /* ---------- EVENTS ---------- */
 
       actionBtn.addEventListener('click', handleAction);
@@ -3690,6 +4026,9 @@
         if (key === currentMode) stagePanels[key].removeAttribute('hidden');
         else stagePanels[key].setAttribute('hidden', '');
       });
+      appEl.hidden = currentMode === 'dedo';
+      fingerStage.hidden = currentMode !== 'dedo';
+      if (currentMode === 'dedo') updateFingerHint();
       actionLabel.textContent = ACTION_LABEL[currentMode];
       actionIcon.innerHTML = ACTION_ICON[currentMode];
       actionIcon.hidden = !ACTION_ICON[currentMode];
