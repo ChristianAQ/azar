@@ -56,7 +56,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      min-height: 92dvh;
+      min-height: 100dvh;
       background: var(--ink);
       color: var(--bone);
       font-family: 'Manrope', sans-serif;
@@ -2147,6 +2147,8 @@
       var players = loadPlayers();
       var currentMode = loadMode();
       var spinning = false;
+      var spinningMode = null; // which mode is mid-spin, so switching away/back keeps tracking it
+      var pendingReveals = []; // { mode, resultText, celebrationOpts } queue, delivered once you're back on that mode
 
       var wheelRotation = 0;
       var lastWinner = -1;
@@ -2696,7 +2698,7 @@
       }
 
       function switchMode(mode) {
-        if (spinning || mode === currentMode) return;
+        if (mode === currentMode) return;
         currentMode = mode;
         saveMode(mode);
 
@@ -2732,7 +2734,8 @@
         actionLabel.textContent = ACTION_LABEL[mode];
         actionIcon.innerHTML = ACTION_ICON[mode];
         actionIcon.hidden = !ACTION_ICON[mode];
-        hudStatus.textContent = HUD_STATUS_IDLE[mode];
+        hudStatus.textContent = !spinning ? HUD_STATUS_IDLE[mode]
+          : (mode === spinningMode ? HUD_STATUS_BUSY[mode] : 'Ocupado…');
 
         var isRuleta = mode === 'ruleta';
         var isImpostor = mode === 'impostor';
@@ -2748,6 +2751,17 @@
         resetResult();
 
         if (isImpostor) resetImpostorToSetup();
+
+        // the mode we just left resumes its spin invisibly; if it already
+        // finished while we were away, its result/celebration was waiting for us
+        for (var i = 0; i < pendingReveals.length; i++) {
+          if (pendingReveals[i].mode !== mode) continue;
+          var reveal = pendingReveals.splice(i, 1)[0];
+          resultEl.textContent = reveal.resultText;
+          resultEl.classList.add('show');
+          openCelebration(reveal.celebrationOpts);
+          break;
+        }
       }
 
       modeTabs.forEach(function (tab) {
@@ -2840,7 +2854,6 @@
           dx: 0,
           dir: 0,
           dragging: false,
-          locked: spinning,
           captured: false,
           index: MODE_ORDER.indexOf(currentMode),
           width: stageShell.clientWidth || 1,
@@ -2852,7 +2865,7 @@
 
       stageShell.addEventListener('pointermove', function (e) {
         var g = gesture;
-        if (!g || e.pointerId !== g.pointerId || g.locked) return;
+        if (!g || e.pointerId !== g.pointerId) return;
         var dx = e.clientX - g.startX;
         var dy = e.clientY - g.startY;
 
@@ -2883,7 +2896,7 @@
         if (g.captured) { try { stageShell.releasePointerCapture(g.pointerId); } catch (err) { } }
 
         if (!g.dragging) {
-          if (!g.locked && currentMode !== 'impostor') handleAction();
+          if (currentMode !== 'impostor') handleAction();
           return;
         }
 
@@ -2990,6 +3003,7 @@
       /* ---------- SPIN: RULETA ---------- */
 
       function spinWheel() {
+        var mode = currentMode; // the wheel keeps spinning even if you swipe away before it lands
         var n = players.length;
         var targetIndex = pickWeightedPlayerIndex();
         if (n > 2 && targetIndex === lastWinner) {
@@ -3025,16 +3039,13 @@
           var name = players[targetIndex];
           roundWinners.add(name);
           if (roundWinners.size >= players.length) roundWinners.clear(); // everyone's had a turn, start a fresh round
-          resultEl.textContent = name;
-          resultEl.classList.add('show');
 
-          openCelebration({
+          endSpin();
+          revealSpinResult(mode, name, {
             eyebrow: 'Le tocó beber a',
             name: name,
             caption: (retosEnabled && retos.length) ? pickRandom(retos) : ''
           });
-
-          endSpin();
         }
 
         needleEl.addEventListener('transitionend', finish, { once: true });
@@ -3436,6 +3447,7 @@
       /* ---------- SPIN: MONEDA ---------- */
 
       function spinCoin() {
+        var mode = currentMode; // the coin keeps tumbling even if you swipe away before it lands
         var target = Math.random() < 0.5 ? 'cara' : 'cruz';
         if (target === lastCoin && Math.random() < 0.5) {
           target = target === 'cara' ? 'cruz' : 'cara';
@@ -3446,27 +3458,25 @@
           lastCoin = target;
 
           var label = target === 'cara' ? 'CARA' : 'CRUZ';
-          resultEl.textContent = 'Tiro anterior:' + label;
-          resultEl.classList.add('show');
 
           setAccentOverride(target === 'cara'
             ? { accent: '#3dffa0', dim: 'rgba(61,255,160,0.16)' }
             : { accent: '#b455ff', dim: 'rgba(180,85,255,0.18)' });
 
-          openCelebration({
+          endSpin();
+          revealSpinResult(mode, 'Tiro anterior:' + label, {
             icon: '🪙',
             eyebrow: 'Salió',
             name: label,
             caption: pickRandom(COIN_CAPTIONS)
           });
-
-          endSpin();
         });
       }
 
       /* ---------- SPIN: DADO ---------- */
 
       function rollDice() {
+        var mode = currentMode; // the dice keep rolling even if you swipe away before they land
         var target = Math.floor(Math.random() * 6) + 1;
         if (target === lastDice) {
           target = (target % 6) + 1;
@@ -3476,16 +3486,12 @@
         DiceGame.spin(target, DICE_TUMBLE_MS, DICE_SETTLE_MS, reduceMotion, function () {
           lastDice = target;
 
-          resultEl.textContent = target;
-          resultEl.classList.add('show');
-
-          openCelebration({
+          endSpin();
+          revealSpinResult(mode, target, {
             eyebrow: 'Salió el número',
             name: String(target),
             caption: DICE_CAPTIONS[target]
           });
-
-          endSpin();
         });
       }
 
@@ -3495,6 +3501,7 @@
         if (spinning) return false;
         if (currentMode === 'ruleta' && players.length < MIN_PLAYERS) return false;
         spinning = true;
+        spinningMode = currentMode;
         actionBtn.disabled = true;
         resultEl.classList.remove('show');
         hudStatus.textContent = HUD_STATUS_BUSY[currentMode];
@@ -3504,7 +3511,20 @@
       function endSpin() {
         spinning = false;
         actionBtn.disabled = false;
-        hudStatus.textContent = HUD_STATUS_IDLE[currentMode];
+        hudStatus.textContent = HUD_STATUS_IDLE[currentMode]; // whatever mode you're currently viewing is idle again either way
+        spinningMode = null;
+      }
+
+      // shows the result/celebration right away if you're still watching that
+      // mode; otherwise it waits until switchMode() brings you back to it
+      function revealSpinResult(mode, resultText, celebrationOpts) {
+        if (currentMode === mode) {
+          resultEl.textContent = resultText;
+          resultEl.classList.add('show');
+          openCelebration(celebrationOpts);
+        } else {
+          pendingReveals.push({ mode: mode, resultText: resultText, celebrationOpts: celebrationOpts });
+        }
       }
 
       function handleAction() {
