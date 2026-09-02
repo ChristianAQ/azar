@@ -50,6 +50,7 @@
     html {
       min-height: 100%;
       background: var(--ink);
+      overscroll-behavior-y: none; /* stops iOS home-screen apps from rubber-banding/scrolling on a double tap */
     }
 
     body {
@@ -66,6 +67,7 @@
       position: relative;
       isolation: isolate;
       touch-action: manipulation; /* outside the stage (which sets its own pan-y/none), this stops mobile's double-tap-to-zoom gesture from kicking in */
+      overscroll-behavior-y: none;
     }
 
     body::before {
@@ -1867,6 +1869,21 @@
   <script>
     (function () {
       "use strict";
+
+      /* ---------- DOUBLE-TAP SCROLL FIX (iOS home-screen apps) ----------
+         touch-action: manipulation stops the native double-tap-to-zoom, but on
+         iPhones pinned to the home screen WebKit can still treat a fast second
+         tap as a scroll-into-view/rubber-band gesture (most noticeable tapping
+         empty space near the bottom of the screen). Swallowing the second
+         touchend of a double tap avoids that, except inside text fields where
+         a double tap should still select a word. */
+      var lastTouchEnd = 0;
+      document.addEventListener('touchend', function (e) {
+        var now = Date.now();
+        var field = e.target.closest && e.target.closest('input, textarea, select, [contenteditable]');
+        if (!field && now - lastTouchEnd <= 350) e.preventDefault();
+        lastTouchEnd = now;
+      }, { passive: false });
 
       /* ---------- CONFIG ---------- */
 
