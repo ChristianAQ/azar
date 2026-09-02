@@ -1679,7 +1679,7 @@
   <div class="edit-menu-backdrop" id="editMenuBackdrop"></div>
 
   <div class="top-bar-inner">
-    <div class="header">
+    <div class="header" id="appHeader">
 
       <h1 class="title">Juegos de <span>Fiesta</span></h1>
       <p class="tagline">Chupito</p>
@@ -2230,6 +2230,7 @@
       var actionLabel = document.getElementById('actionLabel');
 
       var resultEl = document.getElementById('result');
+      var appHeader = document.getElementById('appHeader');
       var appEl = document.getElementById('app');
       var fingerStage = document.getElementById('fingerStage');
       var fingerHint = document.getElementById('fingerHint');
@@ -2310,6 +2311,7 @@
       var fingerPhase = 'idle'; // 'idle' | 'holding' | 'revealing' | 'done'
       var fingerHoldTimer = null;
       var fingerRevealTimers = [];
+      var fingerWinnerOrder = null;
 
       var retos = loadRetos();
       var retosEnabled = loadRetosEnabled();
@@ -2888,6 +2890,7 @@
         });
 
         var isDedo = mode === 'dedo';
+        appHeader.hidden = isDedo;
         appEl.hidden = isDedo;
         fingerStage.hidden = !isDedo;
         if (isDedo) updateFingerHint();
@@ -3755,7 +3758,8 @@
         if (fingerPhase === 'revealing') {
           fingerHint.textContent = 'Sorteando…';
         } else if (fingerPhase === 'done') {
-          fingerHint.textContent = n > 0 ? 'Levanten los dedos para jugar otra vez' : '¡Elegido!';
+          fingerHint.textContent = '¡Dedo #' + fingerWinnerOrder + ' elegido!' +
+            (n > 0 ? ' Levanten los dedos para jugar otra vez' : '');
         } else if (fingerPhase === 'holding') {
           fingerHint.textContent = '¡Quietos…!';
         } else if (n === 0) {
@@ -3784,10 +3788,10 @@
 
       function crownFingerWinner(info) {
         fingerPhase = 'done';
+        fingerWinnerOrder = info.order;
         info.el.classList.add('is-winner');
         updateFingerHint();
         vibrate([30, 60, 30]);
-        openCelebration({ eyebrow: 'El dedo elegido es', name: '#' + info.order, caption: '' });
         checkAllFingersLifted();
       }
 
@@ -3832,6 +3836,7 @@
         fingerTouches.forEach(function (info) { if (info.el.parentNode) info.el.parentNode.removeChild(info.el); });
         fingerTouches.clear();
         fingerOrderCounter = 0;
+        fingerWinnerOrder = null;
         updateFingerHint();
       }
 
@@ -4026,6 +4031,7 @@
         if (key === currentMode) stagePanels[key].removeAttribute('hidden');
         else stagePanels[key].setAttribute('hidden', '');
       });
+      appHeader.hidden = currentMode === 'dedo';
       appEl.hidden = currentMode === 'dedo';
       fingerStage.hidden = currentMode !== 'dedo';
       if (currentMode === 'dedo') updateFingerHint();
