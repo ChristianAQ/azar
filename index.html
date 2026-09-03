@@ -1048,6 +1048,44 @@
       color: var(--coral);
     }
 
+    .elimination-reset-btn {
+      appearance: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 4px auto 0;
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: transparent;
+      color: var(--dim);
+      font-family: 'Manrope', sans-serif;
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: color .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .elimination-reset-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .elimination-reset-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .elimination-reset-btn:active {
+      transform: scale(0.96);
+    }
+
+    .elimination-reset-btn[hidden] {
+      display: none;
+    }
+
     /* ---------- EDIT MENU ---------- */
 
     .edit-menu-backdrop {
@@ -1768,6 +1806,23 @@
             </svg>
           </button>
 
+          <label class="edit-menu-item" for="eliminationEnabledToggle" role="menuitem">
+            <span class="edit-menu-item-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="10" cy="8" r="3" />
+                <path d="M4 20c0-3.3 2.8-5.6 6-5.6s6 2.3 6 5.6" />
+                <line x1="15" y1="15" x2="20" y2="20" />
+                <line x1="20" y1="15" x2="15" y2="20" />
+              </svg>
+            </span>
+            <span class="edit-menu-item-label">Modo eliminación</span>
+            <span class="switch" title="Habilitar modo eliminación">
+              <input type="checkbox" id="eliminationEnabledToggle" aria-label="Habilitar modo eliminación">
+              <span class="switch-track"></span>
+            </span>
+          </label>
+
           <div class="edit-menu-item" id="editRetosToggle" role="menuitem" tabindex="0">
             <span class="edit-menu-item-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -1947,6 +2002,15 @@
 
     <p class="result" id="result" aria-live="polite"></p>
 
+    <button class="elimination-reset-btn" id="eliminationResetBtn" type="button" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M4.5 12a7.5 7.5 0 1 1 2.4 5.5" />
+        <path d="M4.5 12V6.8M4.5 12h5.2" />
+      </svg>
+      Reiniciar jugadores
+    </button>
+
   </div>
 
   <div class="finger-stage" id="fingerStage" hidden>
@@ -1966,13 +2030,6 @@
       </div>
       <div class="modal-body">
         <div class="editor" id="editor">
-          <label class="switch-row">
-            <span>Modo eliminación: quita al elegido hasta que quede 1</span>
-            <span class="switch">
-              <input type="checkbox" id="eliminationEnabledToggle">
-              <span class="switch-track"></span>
-            </span>
-          </label>
           <div class="editor-list" id="editorList"></div>
           <div class="editor-add">
             <input id="newPlayerInput" placeholder="Nombre" maxlength="14">
@@ -2276,6 +2333,7 @@
       var actionLabel = document.getElementById('actionLabel');
 
       var resultEl = document.getElementById('result');
+      var eliminationResetBtn = document.getElementById('eliminationResetBtn');
       var appHeader = document.getElementById('appHeader');
       var appEl = document.getElementById('app');
       var fingerStage = document.getElementById('fingerStage');
@@ -2594,6 +2652,21 @@
         var n = players.length;
         var R = 38;
 
+        // very faint radial lines marking where each player's zone ends, layered
+        // under the wheel's usual background so they barely stand out
+        if (n > 0) {
+          var arc = 360 / n;
+          var half = arc / 2;
+          var lineW = 0.6;
+          var lineColor = 'rgba(244, 239, 227, 0.10)';
+          var divider = 'repeating-conic-gradient(from 0deg, transparent 0deg, transparent ' +
+            (half - lineW / 2) + 'deg, ' + lineColor + ' ' + (half - lineW / 2) + 'deg, ' +
+            lineColor + ' ' + (half + lineW / 2) + 'deg, transparent ' + (half + lineW / 2) + 'deg, transparent ' + arc + 'deg)';
+          wheelEl.style.backgroundImage = divider + ', radial-gradient(circle at 50% 42%, var(--panel-2), var(--panel) 70%)';
+        } else {
+          wheelEl.style.backgroundImage = '';
+        }
+
         players.forEach(function (name, i) {
           var rad = (angleFor(i, n) - 90) * Math.PI / 180;
           var x = 50 + R * Math.cos(rad);
@@ -2622,7 +2695,6 @@
       /* ---------- RENDER: EDITOR ---------- */
 
       function renderEditor() {
-        eliminationEnabledToggle.checked = eliminationEnabled;
         editorList.innerHTML = '';
         players.forEach(function (name, i) {
           var row = document.createElement('div');
@@ -2975,6 +3047,7 @@
         appEl.hidden = isDedo;
         fingerStage.hidden = !isDedo;
         if (isDedo) updateFingerHint();
+        updateEliminationResetVisibility();
 
         if (mode === 'moneda') {
           requestAnimationFrame(function () { CoinGame.init(); CoinGame.resize(); });
@@ -3296,26 +3369,14 @@
           if (eliminationEnabled) {
             players.splice(targetIndex, 1);
             roundWinners.clear();
+            renderWheel(); // one fewer slice next spin; down to 1 it's just the winner left
             endSpin();
-
-            if (players.length <= 1) {
-              var survivor = players[0];
-              players = eliminationBackup.slice(); // bring everyone back for the next round
-              eliminationBackup = null;
-              renderWheel();
-              revealSpinResult(mode, survivor, {
-                eyebrow: 'Único superviviente',
-                name: survivor,
-                caption: 'Todos los demás ya bebieron 🍻'
-              });
-            } else {
-              renderWheel(); // one fewer slice next spin
-              revealSpinResult(mode, name, {
-                eyebrow: 'Le tocó beber a',
-                name: name,
-                caption: (retosEnabled && retos.length) ? pickRandom(retos) : 'Queda fuera de la ruleta'
-              });
-            }
+            updateEliminationResetVisibility();
+            revealSpinResult(mode, name, {
+              eyebrow: 'Le tocó beber a',
+              name: name,
+              caption: (retosEnabled && retos.length) ? pickRandom(retos) : 'Queda fuera de la ruleta'
+            });
             return;
           }
 
@@ -4091,19 +4152,28 @@
       retosEnabledToggle.addEventListener('change', function () { setRetosEnabled(retosEnabledToggle.checked); });
       retosEnabledToggleMenu.addEventListener('change', function () { setRetosEnabled(retosEnabledToggleMenu.checked); });
 
+      function updateEliminationResetVisibility() {
+        eliminationResetBtn.hidden = !(currentMode === 'ruleta' && eliminationEnabled && eliminationBackup);
+      }
+
+      function resetEliminationRound() {
+        if (!eliminationBackup) return;
+        players = eliminationBackup.slice();
+        eliminationBackup = null;
+        roundWinners.clear();
+        renderWheel();
+        renderEditor();
+        resetResult();
+        updateEliminationResetVisibility();
+      }
+      eliminationResetBtn.addEventListener('click', resetEliminationRound);
+
       function setEliminationEnabled(value) {
         eliminationEnabled = value;
         eliminationEnabledToggle.checked = value;
         saveEliminationEnabled();
-        if (!value && eliminationBackup) {
-          // turning it off mid-round restores everyone instead of leaving the wheel shrunk
-          players = eliminationBackup.slice();
-          eliminationBackup = null;
-          roundWinners.clear();
-          renderWheel();
-          renderEditor();
-          resetResult();
-        }
+        if (!value) resetEliminationRound(); // turning it off restores everyone instead of leaving the wheel shrunk
+        updateEliminationResetVisibility();
       }
       eliminationEnabledToggle.addEventListener('change', function () { setEliminationEnabled(eliminationEnabledToggle.checked); });
 
@@ -4147,6 +4217,8 @@
 
       renderWheel();
       updateCoinTallyDisplay();
+      eliminationEnabledToggle.checked = eliminationEnabled;
+      updateEliminationResetVisibility();
       body.className = 'mode-' + currentMode;
       modeTabs.forEach(function (tab) {
         var isActive = tab.dataset.mode === currentMode;
