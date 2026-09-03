@@ -737,6 +737,30 @@
       pointer-events: none;
     }
 
+    .coin-tally {
+      position: absolute;
+      left: 50%;
+      bottom: 8px;
+      transform: translateX(-50%);
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: var(--dim);
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .coin-tally .cara-count {
+      color: var(--neon);
+    }
+
+    .coin-tally .cruz-count {
+      color: var(--violet);
+    }
+
     /* ---------- IMPOSTOR ---------- */
 
     #stage-impostor {
@@ -1856,6 +1880,8 @@
             <div class="coin-rim"></div>
             <canvas id="coinCanvas"></canvas>
           </div>
+          <p class="coin-tally">Cara <span class="cara-count" id="coinTallyCara">0</span> · Cruz <span
+              class="cruz-count" id="coinTallyCruz">0</span></p>
         </div>
 
         <div class="stage-panel is-tappable" id="stage-dado" hidden>
@@ -1940,6 +1966,13 @@
       </div>
       <div class="modal-body">
         <div class="editor" id="editor">
+          <label class="switch-row">
+            <span>Modo eliminación: quita al elegido hasta que quede 1</span>
+            <span class="switch">
+              <input type="checkbox" id="eliminationEnabledToggle">
+              <span class="switch-track"></span>
+            </span>
+          </label>
           <div class="editor-list" id="editorList"></div>
           <div class="editor-add">
             <input id="newPlayerInput" placeholder="Nombre" maxlength="14">
@@ -2051,6 +2084,8 @@
 
       var RETOS_KEY = 'ruleta-chupitos:retos';
       var RETOS_ENABLED_KEY = 'ruleta-chupitos:retos-enabled';
+      var ELIMINATION_ENABLED_KEY = 'ruleta-chupitos:elimination-enabled';
+      var COIN_TALLY_KEY = 'ruleta-chupitos:coin-tally';
       var MAX_RETOS = 60;
 
       var IMPOSTOR_WORDS_KEY = 'ruleta-chupitos:impostor-words';
@@ -2208,10 +2243,6 @@
         { word: 'Guitarra', hint: 'Música' }
       ];
 
-      var COIN_CAPTIONS = [
-        ''
-      ];
-
       var DICE_CAPTIONS = {
         1: 'Uno',
         2: 'Dos',
@@ -2245,6 +2276,8 @@
 
       var coinCanvas = document.getElementById('coinCanvas');
       var diceCanvas = document.getElementById('diceCanvas');
+      var coinTallyCara = document.getElementById('coinTallyCara');
+      var coinTallyCruz = document.getElementById('coinTallyCruz');
 
       var actionBtn = document.getElementById('actionBtn');
       var actionIcon = document.getElementById('actionIcon');
@@ -2267,6 +2300,7 @@
       var editorList = document.getElementById('editorList');
       var newPlayerInput = document.getElementById('newPlayerInput');
       var addPlayerBtn = document.getElementById('addPlayerBtn');
+      var eliminationEnabledToggle = document.getElementById('eliminationEnabledToggle');
 
       var editRetosToggle = document.getElementById('editRetosToggle');
       var retosEditorOverlay = document.getElementById('retosEditorOverlay');
@@ -2326,6 +2360,7 @@
 
       var lastCoin = '';
       var lastDice = -1;
+      var coinTally = loadCoinTally();
 
       var fingerTouches = new Map(); // identifier -> { el, order, lifted }
       var fingerOrderCounter = 0;
@@ -2336,6 +2371,9 @@
 
       var retos = loadRetos();
       var retosEnabled = loadRetosEnabled();
+
+      var eliminationEnabled = loadEliminationEnabled();
+      var eliminationBackup = null; // saved roster while an elimination round is shrinking `players`
 
       var impostorWords = loadImpostorWords();
       var impostorCount = loadImpostorCount();
@@ -2384,6 +2422,35 @@
       function saveRetosEnabled(skipSync) {
         try { localStorage.setItem(RETOS_ENABLED_KEY, String(retosEnabled)); } catch (e) { }
         if (!skipSync) syncRetosToCloud();
+      }
+
+      function loadEliminationEnabled() {
+        try {
+          var raw = localStorage.getItem(ELIMINATION_ENABLED_KEY);
+          if (raw !== null) return raw === 'true';
+        } catch (e) { }
+        return false;
+      }
+      function saveEliminationEnabled() {
+        try { localStorage.setItem(ELIMINATION_ENABLED_KEY, String(eliminationEnabled)); } catch (e) { }
+      }
+
+      function loadCoinTally() {
+        try {
+          var raw = localStorage.getItem(COIN_TALLY_KEY);
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && typeof parsed.cara === 'number' && typeof parsed.cruz === 'number') return parsed;
+          }
+        } catch (e) { }
+        return { cara: 0, cruz: 0 };
+      }
+      function saveCoinTally() {
+        try { localStorage.setItem(COIN_TALLY_KEY, JSON.stringify(coinTally)); } catch (e) { }
+      }
+      function updateCoinTallyDisplay() {
+        coinTallyCara.textContent = coinTally.cara;
+        coinTallyCruz.textContent = coinTally.cruz;
       }
 
       function normalizeImpostorWords(list) {
@@ -2563,6 +2630,7 @@
       /* ---------- RENDER: EDITOR ---------- */
 
       function renderEditor() {
+        eliminationEnabledToggle.checked = eliminationEnabled;
         editorList.innerHTML = '';
         players.forEach(function (name, i) {
           var row = document.createElement('div');
@@ -2580,6 +2648,11 @@
             players.splice(i, 1);
             savePlayers();
             roundWinners.clear();
+            // keep the pending elimination round's restore point in sync
+            if (eliminationBackup) {
+              var backupIdx = eliminationBackup.indexOf(name);
+              if (backupIdx !== -1) eliminationBackup.splice(backupIdx, 1);
+            }
             renderWheel();
             renderEditor();
             resetResult();
@@ -2599,6 +2672,7 @@
         players.push(name);
         savePlayers();
         roundWinners.clear();
+        if (eliminationBackup) eliminationBackup.push(name);
         newPlayerInput.value = '';
         renderWheel();
         renderEditor();
@@ -2870,12 +2944,6 @@
         modeIndicator.style.transform = 'translateX(' + (tabRect.left - dockRect.left - 5) + 'px)';
       }
 
-      function setAccentOverride(colors) {
-        // scoped to the celebration overlay only, so the result color (green/violet)
-        // tints just that card instead of recoloring the whole app's UI (button, tabs, HUD).
-        celebrateEl.style.setProperty('--accent', colors.accent);
-        celebrateEl.style.setProperty('--accent-dim', colors.dim);
-      }
       function clearAccentOverride() {
         celebrateEl.style.removeProperty('--accent');
         celebrateEl.style.removeProperty('--accent-dim');
@@ -2950,7 +3018,7 @@
           var reveal = pendingReveals.splice(i, 1)[0];
           resultEl.textContent = reveal.resultText;
           resultEl.classList.add('show');
-          openCelebration(reveal.celebrationOpts);
+          if (reveal.celebrationOpts) openCelebration(reveal.celebrationOpts);
           break;
         }
       }
@@ -3196,9 +3264,13 @@
       function spinWheel() {
         var mode = currentMode; // the wheel keeps spinning even if you swipe away before it lands
         var n = players.length;
-        var targetIndex = pickWeightedPlayerIndex();
+        var targetIndex = eliminationEnabled ? Math.floor(Math.random() * n) : pickWeightedPlayerIndex();
         if (n > 2 && targetIndex === lastWinner) {
           targetIndex = (targetIndex + 1) % n;
+        }
+
+        if (eliminationEnabled && !eliminationBackup) {
+          eliminationBackup = players.slice(); // restored once only one player is left standing
         }
 
         var arc = 360 / n;
@@ -3228,6 +3300,33 @@
           if (slot) slot.classList.add('winner');
 
           var name = players[targetIndex];
+
+          if (eliminationEnabled) {
+            players.splice(targetIndex, 1);
+            roundWinners.clear();
+            endSpin();
+
+            if (players.length <= 1) {
+              var survivor = players[0];
+              players = eliminationBackup.slice(); // bring everyone back for the next round
+              eliminationBackup = null;
+              renderWheel();
+              revealSpinResult(mode, survivor, {
+                eyebrow: 'Único superviviente',
+                name: survivor,
+                caption: 'Todos los demás ya bebieron 🍻'
+              });
+            } else {
+              renderWheel(); // one fewer slice next spin
+              revealSpinResult(mode, name, {
+                eyebrow: 'Le tocó beber a',
+                name: name,
+                caption: (retosEnabled && retos.length) ? pickRandom(retos) : 'Queda fuera de la ruleta'
+              });
+            }
+            return;
+          }
+
           roundWinners.add(name);
           if (roundWinners.size >= players.length) roundWinners.clear(); // everyone's had a turn, start a fresh round
 
@@ -3650,17 +3749,13 @@
 
           var label = target === 'cara' ? 'CARA' : 'CRUZ';
 
-          setAccentOverride(target === 'cara'
-            ? { accent: '#3dffa0', dim: 'rgba(61,255,160,0.16)' }
-            : { accent: '#b455ff', dim: 'rgba(180,85,255,0.18)' });
+          coinTally[target] += 1;
+          saveCoinTally();
+          updateCoinTallyDisplay();
 
           endSpin();
-          revealSpinResult(mode, 'Tiro anterior:' + label, {
-            icon: '🪙',
-            eyebrow: 'Salió',
-            name: label,
-            caption: pickRandom(COIN_CAPTIONS)
-          });
+          vibrate([30, 60, 30]);
+          revealSpinResult(mode, 'Tiro anterior:' + label, null);
         });
       }
 
@@ -3678,11 +3773,8 @@
           lastDice = target;
 
           endSpin();
-          revealSpinResult(mode, target, {
-            eyebrow: 'Salió el número',
-            name: String(target),
-            caption: DICE_CAPTIONS[target]
-          });
+          vibrate([30, 60, 30]);
+          revealSpinResult(mode, target + ' · ' + DICE_CAPTIONS[target], null);
         });
       }
 
@@ -3712,7 +3804,7 @@
         if (currentMode === mode) {
           resultEl.textContent = resultText;
           resultEl.classList.add('show');
-          openCelebration(celebrationOpts);
+          if (celebrationOpts) openCelebration(celebrationOpts);
         } else {
           pendingReveals.push({ mode: mode, resultText: resultText, celebrationOpts: celebrationOpts });
         }
@@ -4007,6 +4099,22 @@
       retosEnabledToggle.addEventListener('change', function () { setRetosEnabled(retosEnabledToggle.checked); });
       retosEnabledToggleMenu.addEventListener('change', function () { setRetosEnabled(retosEnabledToggleMenu.checked); });
 
+      function setEliminationEnabled(value) {
+        eliminationEnabled = value;
+        eliminationEnabledToggle.checked = value;
+        saveEliminationEnabled();
+        if (!value && eliminationBackup) {
+          // turning it off mid-round restores everyone instead of leaving the wheel shrunk
+          players = eliminationBackup.slice();
+          eliminationBackup = null;
+          roundWinners.clear();
+          renderWheel();
+          renderEditor();
+          resetResult();
+        }
+      }
+      eliminationEnabledToggle.addEventListener('change', function () { setEliminationEnabled(eliminationEnabledToggle.checked); });
+
       addRetoBtn.addEventListener('click', addReto);
       newRetoInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); addReto(); }
@@ -4046,6 +4154,7 @@
       /* ---------- INIT ---------- */
 
       renderWheel();
+      updateCoinTallyDisplay();
       body.className = 'mode-' + currentMode;
       modeTabs.forEach(function (tab) {
         var isActive = tab.dataset.mode === currentMode;
