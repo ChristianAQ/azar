@@ -1048,38 +1048,45 @@
       color: var(--coral);
     }
 
-    .elimination-reset-btn {
-      appearance: none;
+    .action-row {
+      position: relative;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      margin: 4px auto 0;
-      padding: 8px 16px;
-      border-radius: 999px;
+    }
+
+    .elimination-reset-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      appearance: none;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
       border: 1px solid var(--line-strong);
-      background: transparent;
+      background: rgba(244, 239, 227, 0.06);
       color: var(--dim);
-      font-family: 'Manrope', sans-serif;
-      font-weight: 700;
-      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: color .2s ease, border-color .2s ease, background .2s ease;
+      transition: color .2s ease, border-color .2s ease, background .2s ease, transform .15s ease;
     }
 
     .elimination-reset-btn svg {
-      width: 14px;
-      height: 14px;
+      width: 17px;
+      height: 17px;
     }
 
     .elimination-reset-btn:hover {
-      color: var(--accent);
       border-color: var(--accent);
-      background: var(--accent-dim);
+      color: var(--accent);
     }
 
     .elimination-reset-btn:active {
-      transform: scale(0.96);
+      transform: translateY(-50%) scale(0.92);
     }
 
     .elimination-reset-btn[hidden] {
@@ -1994,22 +2001,24 @@
       </div>
     </div>
 
-    <button class="action-btn" id="actionBtn">
-      <svg id="actionIcon" hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-        stroke-linecap="round" stroke-linejoin="round"></svg>
-      <span id="actionLabel">Girar</span>
-    </button>
+    <div class="action-row">
+      <button class="action-btn" id="actionBtn">
+        <svg id="actionIcon" hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round"></svg>
+        <span id="actionLabel">Girar</span>
+      </button>
+
+      <button class="elimination-reset-btn" id="eliminationResetBtn" type="button" title="Reiniciar jugadores"
+        aria-label="Reiniciar jugadores" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M4.5 12a7.5 7.5 0 1 1 2.4 5.5" />
+          <path d="M4.5 12V6.8M4.5 12h5.2" />
+        </svg>
+      </button>
+    </div>
 
     <p class="result" id="result" aria-live="polite"></p>
-
-    <button class="elimination-reset-btn" id="eliminationResetBtn" type="button" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M4.5 12a7.5 7.5 0 1 1 2.4 5.5" />
-        <path d="M4.5 12V6.8M4.5 12h5.2" />
-      </svg>
-      Reiniciar jugadores
-    </button>
 
   </div>
 
